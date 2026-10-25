@@ -1,0 +1,2 @@
+# Optional Python integration tests. The application discovers its own mitmdump.
+mitmproxy==12.3.0

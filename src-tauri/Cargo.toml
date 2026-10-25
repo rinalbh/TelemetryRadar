@@ -1,0 +1,21 @@
+[package]
+name = "telemetryradar-desktop"
+version = "0.1.0"
+description = "Desktop shell for TelemetryRadar"
+edition = "2024"
+publish = false
+
+[lib]
+# Keep library and executable artifact names distinct on Windows.
+name = "telemetryradar_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.5", features = [] }
+serde.workspace = true
+serde_json.workspace = true
+telemetryradar = { path = ".." }
+tokio.workspace = true
