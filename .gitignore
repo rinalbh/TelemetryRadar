@@ -1,0 +1,7 @@
+node_modules/
+.svelte-kit/
+build/
+ui/src/lib/paraglide/
+.DS_Store
+.env
+work/

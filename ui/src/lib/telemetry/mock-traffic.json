@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 1,
+  "sequence": 0,
+  "timestamp": 1792929600000,
+  "history": [
+    {
+      "timestamp": 1792929300000,
+      "inputBytesPerSecond": 28160,
+      "outputBytesPerSecond": 14746
+    },
+    {
+      "timestamp": 1792929305000,
+      "inputBytesPerSecond": 28566,
+      "outputBytesPerSecond": 14832
+    },
+    {
+      "timestamp": 1792929310000,
+      "inputBytesPerSecond": 26872,
+      "outputBytesPerSecond": 13649
+    },
+    {
+      "timestamp": 1792929315000,
+      "inputBytesPerSecond": 26584,
+      "outputBytesPerSecond": 12213
+    },
+    {
+      "timestamp": 1792929320000,
+      "inputBytesPerSecond": 27780,
+      "outputBytesPerSecond": 11559
+    },
+    {
+      "timestamp": 1792929325000,
+      "inputBytesPerSecond": 27211,
+      "outputBytesPerSecond": 12051
+    },
+    {
+      "timestamp": 1792929330000,
+      "inputBytesPerSecond": 23676,
+      "outputBytesPerSecond": 13164
+    },
+    {
+      "timestamp": 1792929335000,
+      "inputBytesPerSecond": 20731,
+      "outputBytesPerSecond": 13868
+    },
+    {
+      "timestamp": 1792929340000,
+      "inputBytesPerSecond": 22416,
+      "outputBytesPerSecond": 13358
+    },
+    {
+      "timestamp": 1792929345000,
+      "inputBytesPerSecond": 27672,
+      "outputBytesPerSecond": 11650
+    },
+    {
+      "timestamp": 1792929350000,
+      "inputBytesPerSecond": 31243,
+      "outputBytesPerSecond": 9644
+    },
+    {
+      "timestamp": 1792929355000,
+      "inputBytesPerSecond": 30088,
+      "outputBytesPerSecond": 8593
+    },
+    {
+      "timestamp": 1792929360000,
+      "inputBytesPerSecond": 26752,
+      "outputBytesPerSecond": 9316
+    },
+    {
+      "timestamp": 1792929365000,
+      "inputBytesPerSecond": 25386,
+      "outputBytesPerSecond": 11639
+    },
+    {
+      "timestamp": 1792929370000,
+      "inputBytesPerSecond": 26219,
+      "outputBytesPerSecond": 14438
+    },
+    {
+      "timestamp": 1792929375000,
+      "inputBytesPerSecond": 26101,
+      "outputBytesPerSecond": 16273
+    },
+    {
+      "timestamp": 1792929380000,
+      "inputBytesPerSecond": 23942,
+      "outputBytesPerSecond": 16222
+    },
+    {
+      "timestamp": 1792929385000,
+      "inputBytesPerSecond": 22901,
+      "outputBytesPerSecond": 14408
+    },
+    {
+      "timestamp": 1792929390000,
+      "inputBytesPerSecond": 25932,
+      "outputBytesPerSecond": 11902
+    },
+    {
+      "timestamp": 1792929395000,
+      "inputBytesPerSecond": 30953,
+      "outputBytesPerSecond": 10062
+    },
+    {
+      "timestamp": 1792929400000,
+      "inputBytesPerSecond": 32773,
+      "outputBytesPerSecond": 9720
+    },
+    {
+      "timestamp": 1792929405000,
+      "inputBytesPerSecond": 29537,
+      "outputBytesPerSecond": 10741
+    },
+    {
+      "timestamp": 1792929410000,
+      "inputBytesPerSecond": 25047,
+      "outputBytesPerSecond": 12183
+    },
+    {
+      "timestamp": 1792929415000,
+      "inputBytesPerSecond": 23820,
+      "outputBytesPerSecond": 12971
+    },
+    {
+      "timestamp": 1792929420000,
+      "inputBytesPerSecond": 25655,
+      "outputBytesPerSecond": 12615
+    },
+    {
+      "timestamp": 1792929425000,
+      "inputBytesPerSecond": 26891,
+      "outputBytesPerSecond": 11519
+    },
+    {
+      "timestamp": 1792929430000,
+      "inputBytesPerSecond": 26134,
+      "outputBytesPerSecond": 10682
+    },
+    {
+      "timestamp": 1792929435000,
+      "inputBytesPerSecond": 26099,
+      "outputBytesPerSecond": 10993
+    },
+    {
+      "timestamp": 1792929440000,
+      "inputBytesPerSecond": 29039,
+      "outputBytesPerSecond": 12582
+    },
+    {
+      "timestamp": 1792929445000,
+      "inputBytesPerSecond": 32561,
+      "outputBytesPerSecond": 14658
+    },
+    {
+      "timestamp": 1792929450000,
+      "inputBytesPerSecond": 32196,
+      "outputBytesPerSecond": 15964
+    },
+    {
+      "timestamp": 1792929455000,
+      "inputBytesPerSecond": 27505,
+      "outputBytesPerSecond": 15557
+    },
+    {
+      "timestamp": 1792929460000,
+      "inputBytesPerSecond": 23203,
+      "outputBytesPerSecond": 13438
+    },
+    {
+      "timestamp": 1792929465000,
+      "inputBytesPerSecond": 23486,
+      "outputBytesPerSecond": 10609
+    },
+    {
+      "timestamp": 1792929470000,
+      "inputBytesPerSecond": 27072,
+      "outputBytesPerSecond": 8518
+    },
+    {
+      "timestamp": 1792929475000,
+      "inputBytesPerSecond": 29480,
+      "outputBytesPerSecond": 8222
+    },
+    {
+      "timestamp": 1792929480000,
+      "inputBytesPerSecond": 29113,
+      "outputBytesPerSecond": 9779
+    },
+    {
+      "timestamp": 1792929485000,
+      "inputBytesPerSecond": 28689,
+      "outputBytesPerSecond": 12240
+    },
+    {
+      "timestamp": 1792929490000,
+      "inputBytesPerSecond": 30398,
+      "outputBytesPerSecond": 14246
+    },
+    {
+      "timestamp": 1792929495000,
+      "inputBytesPerSecond": 32101,
+      "outputBytesPerSecond": 14840
+    },
+    {
+      "timestamp": 1792929500000,
+      "inputBytesPerSecond": 30259,
+      "outputBytesPerSecond": 14001
+    },
+    {
+      "timestamp": 1792929505000,
+      "inputBytesPerSecond": 25515,
+      "outputBytesPerSecond": 12577
+    },
+    {
+      "timestamp": 1792929510000,
+      "inputBytesPerSecond": 22781,
+      "outputBytesPerSecond": 11667
+    },
+    {
+      "timestamp": 1792929515000,
+      "inputBytesPerSecond": 25224,
+      "outputBytesPerSecond": 11880
+    },
+    {
+      "timestamp": 1792929520000,
+      "inputBytesPerSecond": 30189,
+      "outputBytesPerSecond": 12940
+    },
+    {
+      "timestamp": 1792929525000,
+      "inputBytesPerSecond": 32605,
+      "outputBytesPerSecond": 13893
+    },
+    {
+      "timestamp": 1792929530000,
+      "inputBytesPerSecond": 31243,
+      "outputBytesPerSecond": 13783
+    },
+    {
+      "timestamp": 1792929535000,
+      "inputBytesPerSecond": 29448,
+      "outputBytesPerSecond": 12338
+    },
+    {
+      "timestamp": 1792929540000,
+      "inputBytesPerSecond": 29787,
+      "outputBytesPerSecond": 10225
+    },
+    {
+      "timestamp": 1792929545000,
+      "inputBytesPerSecond": 30468,
+      "outputBytesPerSecond": 8686
+    },
+    {
+      "timestamp": 1792929550000,
+      "inputBytesPerSecond": 28543,
+      "outputBytesPerSecond": 8772
+    },
+    {
+      "timestamp": 1792929555000,
+      "inputBytesPerSecond": 25070,
+      "outputBytesPerSecond": 10655
+    },
+    {
+      "timestamp": 1792929560000,
+      "inputBytesPerSecond": 24471,
+      "outputBytesPerSecond": 13472
+    },
+    {
+      "timestamp": 1792929565000,
+      "inputBytesPerSecond": 28579,
+      "outputBytesPerSecond": 15787
+    },
+    {
+      "timestamp": 1792929570000,
+      "inputBytesPerSecond": 33632,
+      "outputBytesPerSecond": 16426
+    },
+    {
+      "timestamp": 1792929575000,
+      "inputBytesPerSecond": 34639,
+      "outputBytesPerSecond": 15151
+    },
+    {
+      "timestamp": 1792929580000,
+      "inputBytesPerSecond": 31428,
+      "outputBytesPerSecond": 12772
+    },
+    {
+      "timestamp": 1792929585000,
+      "inputBytesPerSecond": 28336,
+      "outputBytesPerSecond": 10631
+    },
+    {
+      "timestamp": 1792929590000,
+      "inputBytesPerSecond": 28240,
+      "outputBytesPerSecond": 9793
+    },
+    {
+      "timestamp": 1792929595000,
+      "inputBytesPerSecond": 29272,
+      "outputBytesPerSecond": 10433
+    },
+    {
+      "timestamp": 1792929600000,
+      "inputBytesPerSecond": 20650,
+      "outputBytesPerSecond": 8750
+    }
+  ],
+  "applications": [
+    {
+      "id": "zoom",
+      "name": "zoom.us",
+      "icon": "/icons/zoom.svg",
+      "inputBytes": 4290773,
+      "outputBytes": 2629829,
+      "inputBytesPerSecond": 1000,
+      "outputBytesPerSecond": 500
+    },
+    {
+      "id": "telegram",
+      "name": "Telegram",
+      "icon": "/icons/telegram.svg",
+      "inputBytes": 899678,
+      "outputBytes": 463471,
+      "inputBytesPerSecond": 1650,
+      "outputBytesPerSecond": 750
+    },
+    {
+      "id": "slack",
+      "name": "Slack Helper",
+      "icon": "/icons/slack.svg",
+      "inputBytes": 14155776,
+      "outputBytes": 4718592,
+      "inputBytesPerSecond": 2300,
+      "outputBytesPerSecond": 1000
+    },
+    {
+      "id": "chrome",
+      "name": "Google Chrome Helper",
+      "icon": "/icons/chrome.svg",
+      "inputBytes": 18371052,
+      "outputBytes": 6794772,
+      "inputBytesPerSecond": 2950,
+      "outputBytesPerSecond": 1250
+    },
+    {
+      "id": "unknown",
+      "name": "Unknown process",
+      "icon": "/icons/terminal.svg",
+      "inputBytes": 2810184,
+      "outputBytes": 1384120,
+      "inputBytesPerSecond": 3600,
+      "outputBytesPerSecond": 1500
+    },
+    {
+      "id": "thunderbird",
+      "name": "thunderbird",
+      "icon": "/icons/bird.svg",
+      "inputBytes": 11639194,
+      "outputBytes": 4089446,
+      "inputBytesPerSecond": 4250,
+      "outputBytesPerSecond": 1750
+    },
+    {
+      "id": "rapportd",
+      "name": "rapportd",
+      "icon": "/icons/rapportd.svg",
+      "inputBytes": 22230,
+      "outputBytes": 19713,
+      "inputBytesPerSecond": 4900,
+      "outputBytesPerSecond": 2000
+    }
+  ]
+}

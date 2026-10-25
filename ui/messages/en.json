@@ -1,0 +1,20 @@
+{
+  "analytics": "Analytics",
+  "subtitle": "Monitor, analyze and visualize your network traffic",
+  "traffic_rate": "Traffic rate",
+  "input": "Input",
+  "output": "Output",
+  "traffic_axis": "Traffic (KB/s)",
+  "time_axis": "Time (MSK)",
+  "program": "Program",
+  "demo": "Demo data",
+  "live": "Live · every 5 s",
+  "paused": "Updates paused",
+  "pause": "Pause updates",
+  "resume": "Resume updates",
+  "updated": "Updated {time}",
+  "chart_label": "Incoming and outgoing network traffic over time",
+  "kb": "KB",
+  "mb": "MB",
+  "rate": "{value} KB/s"
+}
