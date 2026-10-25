@@ -38,7 +38,7 @@
     canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    const zero = height * 2 / 3;
+    const zero = height * 23 / 36;
     for (const direction of ['input', 'output'] as const) {
       const points = history.map((p, i) => ({
         x: i / Math.max(1, history.length - 1) * width,
@@ -46,14 +46,14 @@
           : zero + p.outputBytesPerSecond / KB / maxOut * (height - zero)
       }));
       const fill = ctx.createLinearGradient(0, direction === 'input' ? 0 : zero, 0, direction === 'input' ? zero : height);
-      fill.addColorStop(0, direction === 'input' ? '#00e8ee59' : '#006aff3d');
-      fill.addColorStop(1, direction === 'input' ? '#00e8ee30' : '#006aff1f');
+      fill.addColorStop(0, direction === 'input' ? '#97eaf2' : '#bdd6fb');
+      fill.addColorStop(1, direction === 'input' ? '#e2f9fc' : '#edf4ff');
       ctx.beginPath(); curve(ctx, points);
       ctx.lineTo(width, zero); ctx.lineTo(0, zero); ctx.closePath();
       ctx.fillStyle = fill; ctx.fill();
       ctx.beginPath(); curve(ctx, points);
-      ctx.strokeStyle = direction === 'input' ? '#00dce6' : '#0648ff';
-      ctx.lineWidth = 2.6; ctx.stroke();
+      ctx.strokeStyle = direction === 'input' ? '#00c5d7' : '#287dff';
+      ctx.lineWidth = 2; ctx.stroke();
     }
     if (hovered !== null) {
       const x = hovered / Math.max(1, history.length - 1) * width;
@@ -77,7 +77,7 @@
 <div class="chart-wrap" role="group" aria-label={m.chart_label()}>
   <div class="plot" bind:clientWidth={width} bind:clientHeight={height}>
     <div class="grid" aria-hidden="true">
-      {#each [0, 1/3, 2/3, 1] as y}<div class="horizontal" style:top={`${y * 100}%`}></div>{/each}
+      {#each [0, 23/72, 23/36, 1] as y}<div class="horizontal" style:top={`${y * 100}%`}></div>{/each}
       {#each [0, 1, 2, 3, 4, 5] as i}<div class="vertical" style:left={`${i * 20}%`}></div>{/each}
     </div>
     <canvas bind:this={canvas} tabindex="0" onkeydown={navigate} onblur={() => hovered = null} aria-label={m.chart_label()} onpointermove={inspect} onpointerleave={() => hovered = null} data-sample-time={history.at(-1)?.timestamp}>
@@ -85,8 +85,8 @@
     </canvas>
     <div class="zero-line" aria-hidden="true"></div>
     <div class="y-tick" style:top="0%">{maxIn} {m.kb()}</div>
-    <div class="y-tick" style:top="33.333%">{maxIn / 2} {m.kb()}</div>
-    <div class="y-tick" style:top="66.667%">0 {m.kb()}</div>
+    <div class="y-tick" style:top="31.944%">{maxIn / 2} {m.kb()}</div>
+    <div class="y-tick" style:top="63.889%">0 {m.kb()}</div>
     <div class="y-tick" style:top="100%">{maxOut} {m.kb()}</div>
     {#each [0, 1, 2, 3, 4, 5] as i}
       <div class="x-tick" style:left={`${i * 20}%`}>{history.length ? formatTime(history[Math.round(i / 5 * (history.length - 1))].timestamp) : ''}</div>
@@ -100,19 +100,18 @@
 </div>
 
 <style>
-  .chart-wrap { position: relative; margin-top: 12px; height: clamp(240px, 22vw, 310px); color: #535fc3; font-size: 16px; }
+  .chart-wrap { position: relative; margin-top: 6px; height: 307px; color: #68799c; font-size: 15px; }
   canvas:focus-visible { outline: 2px solid #648fff; outline-offset: 4px; border-radius: 8px; }
-  .plot { position: absolute; inset: 24px 30px 66px 86px; }
+  .plot { position: absolute; inset: 24px 1px 67px 80px; }
   canvas, .grid { position: absolute; inset: 0; width: 100%; height: 100%; }
   .grid { pointer-events: none; }
-  .horizontal { position: absolute; width: 100%; border-top: 1px dashed #8db5ff; }
+  .horizontal { position: absolute; width: 100%; border-top: 1px solid #dce7f7; }
   .vertical { position: absolute; height: 100%; border-left: 1px dashed #8db5ff; }
-  .zero-line { position: absolute; top: 66.667%; width: 100%; border-top: 1px solid #648fff; pointer-events: none; }
+  .zero-line { position: absolute; top: 63.889%; width: 100%; border-top: 1px solid #a8c9f3; pointer-events: none; }
   .y-tick { position: absolute; right: calc(100% + 14px); transform: translateY(-50%); white-space: nowrap; }
   .x-tick { position: absolute; top: calc(100% + 22px); transform: translateX(-50%); white-space: nowrap; }
-  .x-tick::before { content: ''; position: absolute; height: 14px; border-left: 1px solid #91b4ff; bottom: calc(100% + 8px); left: 50%; }
-  .y-title { position: absolute; left: 0; top: 47%; transform: translate(-37%, -50%) rotate(-90deg); white-space: nowrap; }
+  .x-tick::before { content: ''; position: absolute; height: 14px; border-left: 1px solid #e1eaf7; bottom: calc(100% + 8px); left: 50%; }
+  .y-title { position: absolute; left: 0; top: 45%; transform: translate(-37%, -50%) rotate(-90deg); white-space: nowrap; }
   .x-title { position: absolute; bottom: 0; left: 53%; transform: translateX(-50%); }
   .tooltip { position: absolute; right: 34px; top: 14px; display: grid; gap: 5px; padding: 12px 16px; border: 1px solid #dce6ff; background: #ffffffed; border-radius: 12px; font-size: 13px; color: #283893; box-shadow: 0 8px 24px #10286c10; pointer-events: none; }
 </style>
-

@@ -6,7 +6,7 @@
 </script>
 
 {#if raster}
-  <img src={icon} alt="" width="38" height="38" />
+  <img src={icon} alt="" width="40" height="40" />
 {:else}
   <span class="app-icon {kind}" aria-hidden="true">
     {#if kind === 'zoom'}<b>zoom</b>
@@ -20,7 +20,7 @@
 {/if}
 
 <style>
-  img, .app-icon { width: 38px; height: 38px; flex: 0 0 38px; }
+  img, .app-icon { width: 40px; height: 40px; flex: 0 0 40px; }
   .app-icon { position: relative; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 9px; background: #e7edff; color: #4655ac; font: 700 14px Arial, sans-serif; }
   .zoom { background: linear-gradient(140deg, #02cafa, #052bff); color: white; }
   .zoom b { font-size: 10px; letter-spacing: -.5px; }

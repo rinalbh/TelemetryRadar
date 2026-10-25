@@ -1,6 +1,6 @@
 # TelemetryRadar
 
-Desktop application network traffic analytics. The first Analytics screen currently runs on JSON mock data updated every five seconds.
+Desktop application network traffic analytics. The app opens on Ready to record. Start recording transitions to /analytics, which currently runs on JSON mock data updated every five seconds.
 
 ## Repository layout
 
@@ -51,6 +51,6 @@ The production preview is at http://127.0.0.1:4173/. Build output is in `ui/buil
 
 You can also change into `ui/` and run the corresponding npm commands without `--prefix ui`.
 
-The UI uses Svelte 5, SvelteKit 3, TypeScript 6.0.3 and English-only Paraglide. Future agent and Tauri projects can be added alongside `ui/`; neither is implemented yet. For a future root-level `src-tauri/`, the frontend distribution path will be `../ui/build`.
+The screens use HTML/CSS, local PNG icons and a Canvas traffic chart; no SVG is embedded. The UI uses Svelte 5, SvelteKit 3, TypeScript 6.0.3 and English-only Paraglide. Future agent and Tauri projects can be added alongside `ui/`; neither is implemented yet. For a future root-level `src-tauri/`, the frontend distribution path will be `../ui/build`.
 
 See [CHANGES_AND_TESTING.md](CHANGES_AND_TESTING.md) for implementation details, data contracts and manual verification steps.
