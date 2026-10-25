@@ -1,5 +1,11 @@
 use crate::{Error, Result};
-use std::{env, path::PathBuf, process::Command};
+use std::{
+    env,
+    path::PathBuf,
+    process::Command,
+    sync::atomic::{AtomicBool, Ordering},
+    time::{Duration, Instant},
+};
 
 #[derive(Clone, Debug)]
 pub struct Installation {
@@ -22,6 +28,20 @@ pub(super) fn command(path: impl AsRef<std::ffi::OsStr>) -> Command {
 impl Installation {
     /// An explicit mitmdump executable or MITMPROXY_MITMDUMP overrides discovery.
     pub fn detect(explicit: Option<PathBuf>) -> Result<Self> {
+        Self::detect_with_control(
+            explicit,
+            Instant::now() + Duration::from_secs(30),
+            &AtomicBool::new(false),
+        )
+    }
+
+    /// Bound and cancel version probes without starting interception or trust work.
+    pub fn detect_with_control(
+        explicit: Option<PathBuf>,
+        deadline: Instant,
+        cancelled: &AtomicBool,
+    ) -> Result<Self> {
+        check_control(deadline, cancelled)?;
         let mut candidates = Vec::new();
         if let Some(path) =
             explicit.or_else(|| env::var_os("MITMPROXY_MITMDUMP").map(PathBuf::from))
@@ -76,29 +96,33 @@ impl Installation {
         }
         let mut errors = Vec::new();
         for path in candidates {
+            check_control(deadline, cancelled)?;
             if !path.is_file() {
                 continue;
             }
-            match Self::probe(path.clone()) {
+            match Self::probe(path.clone(), deadline, cancelled) {
                 Ok(installation) => return Ok(installation),
                 Err(error) => errors.push(format!("{}: {error}", path.display())),
             }
         }
+        check_control(deadline, cancelled)?;
         Err(Error::Invalid(format!(
             "mitmdump with local capture support not found. Install mitmproxy or set MITMPROXY_MITMDUMP/--mitmdump. {}",
             errors.join("; ")
         )))
     }
-    fn probe(path: PathBuf) -> Result<Self> {
+    fn probe(path: PathBuf, deadline: Instant, cancelled: &AtomicBool) -> Result<Self> {
         let path = path.canonicalize()?;
-        let output = command(&path).arg("--version").output()?;
-        if !output.status.success() {
-            return Err(Error::Tool {
+        let mut probe = command(&path);
+        probe.arg("--version");
+        let output = crate::opencode::verification::run_bounded(probe, deadline, cancelled)
+            .map_err(|error| Error::Tool {
                 tool: "mitmdump",
-                details: String::from_utf8_lossy(&output.stderr).into_owned(),
+                details: error.to_string(),
             });
-        }
-        let banner = String::from_utf8_lossy(&output.stdout);
+        check_control(deadline, cancelled)?;
+        let output = output?;
+        let banner = String::from_utf8_lossy(&output);
         let version = parse_version(&banner)?;
         // Linux local mode arrived in 11.1; the managed addon requires this baseline.
         if version < semver::Version::new(11, 1, 0) {
@@ -111,6 +135,21 @@ impl Installation {
             version,
         })
     }
+}
+
+fn check_control(deadline: Instant, cancelled: &AtomicBool) -> Result<()> {
+    if cancelled.load(Ordering::Acquire) {
+        return Err(Error::Cancelled {
+            operation: "mitmproxy discovery",
+        });
+    }
+    if Instant::now() >= deadline {
+        return Err(Error::Tool {
+            tool: "mitmdump",
+            details: "Tool discovery timed out".into(),
+        });
+    }
+    Ok(())
 }
 
 fn parse_version(banner: &str) -> Result<semver::Version> {
@@ -128,6 +167,25 @@ fn parse_version(banner: &str) -> Result<semver::Version> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn stop_and_expired_deadline_prevent_tool_discovery() {
+        assert!(matches!(
+            Installation::detect_with_control(
+                Some("absent-mitmdump".into()),
+                Instant::now() + Duration::from_secs(1),
+                &AtomicBool::new(true)
+            ),
+            Err(Error::Cancelled { .. })
+        ));
+        assert!(matches!(
+            Installation::detect_with_control(
+                Some("absent-mitmdump".into()),
+                Instant::now(),
+                &AtomicBool::new(false)
+            ),
+            Err(Error::Tool { .. })
+        ));
+    }
     #[test]
     fn parses_only_mitmproxy_banner() {
         assert_eq!(

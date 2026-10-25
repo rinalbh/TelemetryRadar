@@ -45,6 +45,12 @@ pub struct Report {
     pub decryption: Option<DecryptionReport>,
 }
 
+#[derive(Clone, Debug)]
+pub enum Event {
+    Phase(Phase),
+    RawArtifactAvailable(PathBuf),
+}
+
 /// Start recording only after the proxy redirector and CA trust are ready.
 /// Stop the proxy as soon as raw packet recording ends, revoke capture-owned
 /// trust, then atomically publish a pcapng containing any collected TLS secrets.
@@ -53,12 +59,28 @@ pub struct Report {
 /// the completed portion. Finalization always runs to completion after a stop.
 pub fn run(
     installation: wireshark::Installation,
-    mut options: CaptureOptions,
+    options: CaptureOptions,
     interception: Option<InterceptionOptions>,
     cancelled: &AtomicBool,
     mut on_phase: impl FnMut(Phase),
 ) -> Result<Report> {
-    on_phase(Phase::Preparing);
+    run_observed(installation, options, interception, cancelled, |event| {
+        if let Event::Phase(phase) = event {
+            on_phase(phase);
+        }
+    })
+}
+
+/// Lifecycle hook for desktop workers. Raw paths are internal scratch artifacts;
+/// consumers must copy complete blocks and use the published output after finish.
+pub fn run_observed(
+    installation: wireshark::Installation,
+    mut options: CaptureOptions,
+    interception: Option<InterceptionOptions>,
+    cancelled: &AtomicBool,
+    mut observer: impl FnMut(Event),
+) -> Result<Report> {
+    observer(Event::Phase(Phase::Preparing));
     options.validate()?;
     let mut outputs = vec![options.output.clone()];
     if let Some(proxy) = &interception {
@@ -89,7 +111,7 @@ pub fn run(
         let local = if let Some(proxy) = interception {
             let directory = staging.as_ref().expect("MITM staging directory").path();
             options.output = directory.join("packets.pcapng");
-            on_phase(Phase::StartingProxy);
+            observer(Event::Phase(Phase::StartingProxy));
             let local = mitmproxy::LocalSession::start(
                 proxy.installation,
                 mitmproxy::LocalOptions {
@@ -119,9 +141,9 @@ pub fn run(
             options,
             local.as_ref(),
             cancelled,
-            &mut on_phase,
+            &mut observer,
         );
-        on_phase(Phase::Finalizing);
+        observer(Event::Phase(Phase::Finalizing));
         let cleanup = if let Some(local) = local {
             local.stop();
             local.wait().map(|_| ())
@@ -130,7 +152,7 @@ pub fn run(
         };
         let mut capture = combine(packets, cleanup)?;
         let decryption = if let Some(secrets) = &secrets {
-            on_phase(Phase::EmbeddingTls);
+            observer(Event::Phase(Phase::EmbeddingTls));
             let report =
                 installation.embed_tls_secrets(&capture.output, secrets.path(), &output)?;
             capture.output = report.output.clone();
@@ -145,7 +167,7 @@ pub fn run(
     })();
     match result {
         Ok(report) => {
-            on_phase(Phase::Finished);
+            observer(Event::Phase(Phase::Finished));
             Ok(report)
         }
         Err(error) => Err(preserve_failure(
@@ -215,21 +237,28 @@ fn record(
     options: CaptureOptions,
     local: Option<&mitmproxy::LocalSession>,
     cancelled: &AtomicBool,
-    on_phase: &mut impl FnMut(Phase),
+    observer: &mut impl FnMut(Event),
 ) -> Result<CaptureReport> {
     check_cancelled(cancelled)?;
-    on_phase(Phase::StartingCapture);
+    observer(Event::Phase(Phase::StartingCapture));
     let session = CaptureSession::start(installation.clone(), options)?;
     let mut previous = CapturePhase::Starting;
     while !session.is_finished() {
+        while let Some(event) = session.try_event() {
+            if let wireshark::CaptureEvent::RawArtifactAvailable(path) = event {
+                observer(Event::RawArtifactAvailable(path));
+            }
+        }
         if cancelled.load(Ordering::Acquire) {
             session.stop();
         }
         let phase = session.phase();
         if phase != previous {
             match phase {
-                CapturePhase::Recording => on_phase(Phase::Recording),
-                CapturePhase::Finalizing | CapturePhase::Finished => on_phase(Phase::Finalizing),
+                CapturePhase::Recording => observer(Event::Phase(Phase::Recording)),
+                CapturePhase::Finalizing | CapturePhase::Finished => {
+                    observer(Event::Phase(Phase::Finalizing))
+                }
                 CapturePhase::Starting => {}
             }
             previous = phase;

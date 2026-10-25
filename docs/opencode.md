@@ -97,28 +97,48 @@ closes the connection before allowing a retry with an uncertain outcome.
 
 ## Capture analysis
 
-`Investigation::prepare(capture, question)` validates the existing file, discovers
-host TShark and optional Python, creates a `.telemetryradar-analysis-*` workspace
-beside the capture, and prepares instructions. It performs no packet analysis.
-The instructions supply explicit executable paths and offline decoding options,
-including two-pass/out-of-order TCP reassembly and embedded TLS secrets. OpenCode
-is asked to inspect evidence, cite frames and streams, leave the source unchanged,
-and use Python's standard library if needed. No MCP server is supplied.
+`Investigation::prepare(capture, question)` discovers host TShark and optional
+Python, establishes an analysis copy in the application's retained investigations
+directory, hashes it, and writes the versioned JSON report schema. `prepare_in`
+uses a workspace reserved by the desktop operation manager. Imported captures have
+unknown process identity and capture interval; filenames and file timestamps are
+not used to infer either. Preparation does not send an ACP prompt.
 
-The desktop exposes `analyze_capture`, `cancel_analysis`, and
-`respond_opencode_permission`. One analysis runs at a time. Updates travel through
-a Tauri IPC channel, with explicit errors on broadcast lag. Cancellation waits up
-to five seconds for a prompt response before shutting down the connection. The
-assistant response is retained in the investigation workspace, including partial
-output on errors. The workspace is not a sandbox; shell authority and permissions
-belong to OpenCode and the host user.
+Desktop analysis commands live in `src-tauri/src/analysis.rs`. `analyze_capture`
+analyzes an existing artifact; `prepare_analysis` and `stop_capture_and_analyze`
+perform the explicit capture handoff. One analysis runs at a time. Preparation
+creates an ACP session and returns its advertised configuration options without
+prompting. Model choices use advertised IDs/values, confirmed by
+`set_config_option`.
+
+A completed result contains `ReportV1`, host validation metadata, analysis/session
+IDs and report/manifest paths. Each turn writes a fresh expected
+`attempt-N/report.candidate.json`; the public transcript is a separate diagnostic
+artifact. Only `end_turn` with intact streams and no cancellation can proceed to
+validation. Strict decoding rejects duplicate/unknown fields, unsupported
+versions, missing nullable fields, invalid references and resource bounds. Bounded
+offline TShark queries independently check locators and numeric packet/frame-byte
+measurements. Locator verification does not prove interpretation or risk. One
+repair is allowed for candidate content errors under the original deadline.
+
+`analysis_status` supplies operation state including sequence, stage, pending
+permissions, public progress, cancellation request and terminal outcome. Saved
+nonterminal operations are reported as interrupted after restart; they are never
+automatically prompted again. Detached IPC subscribers do not cancel retained
+work. See [capture-workflow.md](capture-workflow.md) for contracts and scope.
+
+The workspace is not a sandbox; shell authority and permissions belong to
+OpenCode and the host user. Extracted traffic may be sent to the selected provider.
+The future confirmation view must identify the advertised model/provider. Example
+redaction does not redact provider requests or tool output.
 
 ```powershell
 cargo run --example opencode_analyze -- system.pcapng "What data is sent and where?"
 ```
 
-This interactive example uses the same investigation instructions. It prints
-permission details and accepts an offered option ID on stdin. Set `TELEMETRYRADAR_MODEL`
+This interactive example uses the same candidate contract, bounded validation and
+single repair allowance, retaining its transcript separately. It prints permission
+details and accepts `REQUEST_ID OPTION_ID` (or `REQUEST_ID cancel`) on stdin. Set `TELEMETRYRADAR_MODEL`
 to override the model for this session, or `TELEMETRYRADAR_ACP_TRACE=1` to log protocol
 method names and response IDs without message/tool contents. It can make model
 provider calls through the user's existing OpenCode configuration. The desktop

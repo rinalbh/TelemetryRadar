@@ -30,7 +30,7 @@
       directory = event.directory;
     } else if (event.type === 'permission') {
       permissions = [...permissions, event.permission];
-    } else {
+    } else if (event.type === 'update') {
       const update = event.notification.update;
       if (update.sessionUpdate === 'agent_message_chunk' && update.content && !Array.isArray(update.content) && update.content.type === 'text') {
         response += update.content.text ?? '';

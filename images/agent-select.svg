@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1586" height="992" viewBox="0 0 1586 992">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#EDF6FF"/>
+      <stop offset="1" stop-color="#AACCEE"/>
+    </linearGradient>
+    <filter id="menu" x="-15%" y="-8%" width="130%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#1B2A4A" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <rect width="1586" height="992" fill="url(#bg)"/>
+
+  <g transform="translate(68 62)" fill="none" stroke="#3478FF" stroke-linecap="round">
+    <circle r="18" stroke-width="2.4"/>
+    <circle r="11.5" stroke-width="2" opacity="0.55"/>
+    <circle r="5.5" stroke-width="2" opacity="0.85"/>
+    <path d="M0 0 L0 -18 A18 18 0 0 1 12.7 -12.7 Z" fill="#3478FF" stroke="none" opacity="0.22"/>
+    <path d="M0 0 L12.6 -12.6" stroke-width="2"/>
+    <circle r="2.2" fill="#3478FF" stroke="none"/>
+    <circle cx="8" cy="-4.5" r="2" fill="#3478FF" stroke="none"/>
+  </g>
+  <text x="102" y="78" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#151B36">Choose an agent</text>
+
+  <rect x="48" y="148" width="900" height="792" rx="28" fill="#FFFFFF"/>
+  <rect x="972" y="148" width="566" height="792" rx="28" fill="#FFFFFF"/>
+
+  <!-- TreeSelect field -->
+  <rect x="248" y="188" width="500" height="52" rx="10" fill="#FFFFFF" stroke="#C5D0E0" stroke-width="1.5"/>
+  <text x="272" y="220" font-family="Arial, sans-serif" font-size="16" fill="#98A2B3">Select agent</text>
+  <polygon points="706,208 718,208 712,216" fill="#7C8BA3"/>
+
+  <!-- Open menu -->
+  <g filter="url(#menu)">
+    <rect x="248" y="252" width="500" height="508" rx="12" fill="#FFFFFF" stroke="#C5D0E0" stroke-width="1.5"/>
+  </g>
+
+  <!-- Privacy, expanded -->
+  <polygon points="268,274 278,274 273,280" fill="#7C8BA3"/>
+  <path d="M308 268 l8 3 v5 c0 4-3.2 6.2-8 8 c-4.8-1.8-8-4-8-8 v-5 z" fill="#5E6D84"/>
+  <text x="332" y="286" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Privacy</text>
+
+  <polygon points="296,313 296,323 302,318" fill="#7C8BA3"/>
+  <rect x="320" y="312" width="11" height="9" rx="1.5" fill="#5E6D84"/>
+  <path d="M322.5 312 v-2 a3 3 0 0 1 6 0 v2" fill="none" stroke="#5E6D84" stroke-width="1.6"/>
+  <text x="348" y="330" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Sensitive data</text>
+
+  <polygon points="296,357 296,367 302,362" fill="#7C8BA3"/>
+  <path d="M331 354 a5 5 0 0 1 5 6 c0 3.5-5 8-5 8 s-5-4.5-5-8 a5 5 0 0 1 5-6 z" fill="#5E6D84"/>
+  <circle cx="331" cy="360" r="1.7" fill="#FFFFFF"/>
+  <text x="348" y="374" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Location</text>
+
+  <!-- Traffic, expanded -->
+  <polygon points="268,406 278,406 273,412" fill="#7C8BA3"/>
+  <rect x="300" y="402" width="16" height="3" rx="1.5" fill="#5E6D84"/>
+  <rect x="300" y="407" width="11" height="3" rx="1.5" fill="#5E6D84"/>
+  <rect x="300" y="412" width="14" height="3" rx="1.5" fill="#5E6D84"/>
+  <text x="332" y="418" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Traffic</text>
+
+  <path d="M316 442 h12 a2 2 0 0 1 2 2 v6 a2 2 0 0 1-2 2 h-6 l-3 3 v-3 h-3 a2 2 0 0 1-2-2 v-6 a2 2 0 0 1 2-2 z" fill="#5E6D84"/>
+  <text x="348" y="462" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Messages</text>
+
+  <rect x="318" y="484" width="10" height="16" rx="2.5" fill="#5E6D84"/>
+  <rect x="321" y="487" width="4" height="2" rx="0.6" fill="#FFFFFF"/>
+  <text x="348" y="506" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Calls</text>
+
+  <rect x="316" y="530" width="16" height="12" rx="2" fill="#5E6D84"/>
+  <circle cx="320" cy="534" r="1.5" fill="#FFFFFF"/>
+  <path d="M318 538 l3-2.5 2.5 2 4-3.5 v5 h-10 z" fill="#FFFFFF"/>
+  <text x="348" y="550" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Media</text>
+
+  <!-- Specialists, expanded -->
+  <polygon points="268,582 278,582 273,588" fill="#7C8BA3"/>
+  <polygon points="308,574 310.2,579.2 315.8,579.2 311.3,582.4 313,587.6 308,584.4 303,587.6 304.7,582.4 300.2,579.2 305.8,579.2" fill="#5E6D84"/>
+  <text x="332" y="594" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Specialists</text>
+
+  <rect x="260" y="612" width="476" height="40" rx="8" fill="#F2F6FF"/>
+  <polygon points="296,625 296,635 302,630" fill="#3478FF"/>
+  <path d="M316 622 h12 a2 2 0 0 1 2 2 v6 a2 2 0 0 1-2 2 h-6 l-3 3 v-3 h-3 a2 2 0 0 1-2-2 v-6 a2 2 0 0 1 2-2 z" fill="#3478FF"/>
+  <text x="348" y="638" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#151B36">Discord analyst</text>
+
+  <polygon points="296,669 296,679 302,674" fill="#7C8BA3"/>
+  <path d="M316 666 h12 a2 2 0 0 1 2 2 v6 a2 2 0 0 1-2 2 h-6 l-3 3 v-3 h-3 a2 2 0 0 1-2-2 v-6 a2 2 0 0 1 2-2 z" fill="#5E6D84"/>
+  <text x="348" y="682" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Telegram analyst</text>
+
+  <polygon points="296,713 296,723 302,718" fill="#7C8BA3"/>
+  <circle cx="325" cy="718" r="7" fill="#5E6D84"/>
+  <path d="M325 713.5 v9 M320.5 718 h9" stroke="#FFFFFF" stroke-width="1.3"/>
+  <text x="348" y="726" font-family="Arial, sans-serif" font-size="16" fill="#2C3A4E">Browser analyst</text>
+
+  <!-- Right: what the highlighted agent will do -->
+  <text x="1004" y="196" font-family="Arial, sans-serif" font-size="13" fill="#8B98B0">SELECTED APP</text>
+  <text x="1004" y="236" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#151B36">Discord</text>
+  <text x="1004" y="268" font-family="Arial, sans-serif" font-size="16" fill="#617193">48.0 MB in this capture</text>
+
+  <path d="M1004 300 H1486" fill="none" stroke="#E3ECF8" stroke-width="1"/>
+
+  <text x="1004" y="344" font-family="Arial, sans-serif" font-size="13" fill="#8B98B0">HIGHLIGHTED AGENT</text>
+  <text x="1004" y="384" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#151B36">Discord analyst</text>
+  <text x="1004" y="428" font-family="Arial, sans-serif" font-size="16" fill="#455986">Reads this capture and sorts packets into</text>
+  <text x="1004" y="454" font-family="Arial, sans-serif" font-size="16" fill="#455986">messages, calls, video, media, and location.</text>
+  <text x="1004" y="492" font-family="Arial, sans-serif" font-size="16" fill="#455986">If location is there, it says so in plain</text>
+  <text x="1004" y="518" font-family="Arial, sans-serif" font-size="16" fill="#455986">language and tells you not to leak it.</text>
+
+  <rect x="1004" y="560" width="250" height="52" rx="26" fill="#3478FF"/>
+  <text x="1129" y="592" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF">Run Discord analyst</text>
+</svg>

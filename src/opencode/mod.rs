@@ -7,11 +7,16 @@ mod connection;
 mod discovery;
 mod investigation;
 mod permissions;
+pub mod report;
+pub mod verification;
 
 pub use agent_client_protocol::schema::{self, v1};
 pub use connection::{ConnectOptions, ConnectionState, OpenCodeConnection};
 pub use discovery::{DiscoveryOptions, DiscoverySource, Installation, discover};
-pub use investigation::Investigation;
+pub use investigation::{
+    Investigation, analysis_root, hash_file, publish_json, read_bounded_regular, read_candidate,
+    reserve_workspace,
+};
 pub use permissions::PermissionRequest;
 
 /// Errors that can be shown by a GUI without inspecting protocol frames.

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1586" height="992" viewBox="0 0 1586 992">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#EDF6FF"/>
+      <stop offset="1" stop-color="#AACCEE"/>
+    </linearGradient>
+    <filter id="card" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#1B3A66" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <rect width="1586" height="992" fill="url(#bg)"/>
+
+  <g transform="translate(68 62)" fill="none" stroke="#3478FF" stroke-linecap="round">
+    <circle r="18" stroke-width="2.4"/>
+    <circle r="11.5" stroke-width="2" opacity="0.55"/>
+    <circle r="5.5" stroke-width="2" opacity="0.85"/>
+    <path d="M0 0 L0 -18 A18 18 0 0 1 12.7 -12.7 Z" fill="#3478FF" stroke="none" opacity="0.22"/>
+    <path d="M0 0 L12.6 -12.6" stroke-width="2"/>
+    <circle r="2.2" fill="#3478FF" stroke="none"/>
+    <circle cx="8" cy="-4.5" r="2" fill="#3478FF" stroke="none"/>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="393" y="196" width="800" height="400" rx="28" fill="#FFFFFF"/>
+  </g>
+
+  <g transform="translate(793 300)" fill="none" stroke="#3478FF" stroke-linecap="round">
+    <circle r="40" stroke-width="3"/>
+    <circle r="26" stroke-width="2.5" opacity="0.55"/>
+    <circle r="12" stroke-width="2.5" opacity="0.85"/>
+    <path d="M0 0 L0 -40 A40 40 0 0 1 28.3 -28.3 Z" fill="#3478FF" stroke="none" opacity="0.22"/>
+    <path d="M0 0 L28 -28" stroke-width="2.5"/>
+    <circle r="4" fill="#3478FF" stroke="none"/>
+    <circle cx="18" cy="-10" r="3.5" fill="#3478FF" stroke="none"/>
+  </g>
+
+  <text x="793" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="700" fill="#151B36">TelemetryRadar</text>
+  <text x="793" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#151B36">Ready to record</text>
+
+  <rect x="613" y="484" width="360" height="56" rx="28" fill="#3478FF"/>
+  <text x="793" y="519" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">Start recording</text>
+</svg>

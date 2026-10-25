@@ -1,5 +1,5 @@
 use super::{Error, Result, v1::*};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
     sync::{
@@ -9,7 +9,7 @@ use std::{
 };
 use tokio::sync::{broadcast, oneshot};
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PermissionRequest {
     pub request_id: u64,

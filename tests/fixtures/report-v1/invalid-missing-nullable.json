@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "summary": "One frame was observed. Its purpose is unknown because payload visibility is limited.",
+  "trafficKinds": [
+    {
+      "id": "encrypted",
+      "kind": "Encrypted traffic with unknown purpose",
+      "description": "Frame 1 is present; the purpose cannot be inferred from encryption alone.",
+      "amount": {
+        "value": null,
+        "unit": "requests",
+        "coverage": "unknown",
+        "basis": "Request counting is not supported; encrypted payloads were not classified.",
+        "evidenceRefs": []
+      },
+      "risk": {
+        "level": "unknown",
+        "rationale": "The visible frame does not establish a concrete privacy concern.",
+        "evidenceRefs": []
+      },
+      "evidenceRefs": [
+        "frame-sample"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "frame-sample",
+      "frames": [
+        1
+      ],
+      "streams": [],
+      "displayFilter": null,
+      "note": "A sample locator establishes existence, not the narrative interpretation."
+    }
+  ],
+  "limitations": [
+    "Encrypted or unavailable payloads cannot establish absence of telemetry."
+  ]
+}

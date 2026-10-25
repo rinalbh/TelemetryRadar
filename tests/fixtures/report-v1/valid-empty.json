@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "summary": "No classification is available.",
+  "trafficKinds": [],
+  "evidence": [],
+  "limitations": [
+    "The selected artifact may contain packets, but no purpose classification was produced."
+  ]
+}

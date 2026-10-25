@@ -73,6 +73,7 @@ impl CaptureOptions {
 
 #[derive(Clone, Debug)]
 pub enum CaptureEvent {
+    RawArtifactAvailable(PathBuf),
     Started,
     Processes(Vec<ProcessIdentity>),
     Filtering,
@@ -273,6 +274,7 @@ fn capture_in(
         .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or(std::path::Path::new("."));
     let raw = scratch.join("raw.pcapng");
+    let _ = events.try_send(CaptureEvent::RawArtifactAvailable(raw.clone()));
     let diagnostics = scratch.join("dumpcap.log");
     let mut command = platform::command(&installation.dumpcap);
     command.args([
