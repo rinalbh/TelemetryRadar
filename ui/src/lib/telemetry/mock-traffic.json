@@ -313,7 +313,7 @@
     {
       "id": "zoom",
       "name": "zoom.us",
-      "icon": "/icons/zoom.svg",
+      "icon": "mock:zoom",
       "inputBytes": 4290773,
       "outputBytes": 2629829,
       "inputBytesPerSecond": 1000,
@@ -322,7 +322,7 @@
     {
       "id": "telegram",
       "name": "Telegram",
-      "icon": "/icons/telegram.svg",
+      "icon": "mock:telegram",
       "inputBytes": 899678,
       "outputBytes": 463471,
       "inputBytesPerSecond": 1650,
@@ -331,7 +331,7 @@
     {
       "id": "slack",
       "name": "Slack Helper",
-      "icon": "/icons/slack.svg",
+      "icon": "mock:slack",
       "inputBytes": 14155776,
       "outputBytes": 4718592,
       "inputBytesPerSecond": 2300,
@@ -340,7 +340,7 @@
     {
       "id": "chrome",
       "name": "Google Chrome Helper",
-      "icon": "/icons/chrome.svg",
+      "icon": "mock:chrome",
       "inputBytes": 18371052,
       "outputBytes": 6794772,
       "inputBytesPerSecond": 2950,
@@ -349,7 +349,7 @@
     {
       "id": "unknown",
       "name": "Unknown process",
-      "icon": "/icons/terminal.svg",
+      "icon": "mock:terminal",
       "inputBytes": 2810184,
       "outputBytes": 1384120,
       "inputBytesPerSecond": 3600,
@@ -358,7 +358,7 @@
     {
       "id": "thunderbird",
       "name": "thunderbird",
-      "icon": "/icons/bird.svg",
+      "icon": "mock:bird",
       "inputBytes": 11639194,
       "outputBytes": 4089446,
       "inputBytesPerSecond": 4250,
@@ -367,7 +367,7 @@
     {
       "id": "rapportd",
       "name": "rapportd",
-      "icon": "/icons/rapportd.svg",
+      "icon": "mock:rapportd",
       "inputBytes": 22230,
       "outputBytes": 19713,
       "inputBytesPerSecond": 4900,

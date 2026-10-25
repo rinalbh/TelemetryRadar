@@ -7,7 +7,7 @@ export interface TrafficSample {
 export interface ApplicationTraffic {
   id: string;
   name: string;
-  /** An agent can supply a local asset URL or a data:image URL. */
+  /** Mock token, local PNG/JPEG/WebP URL, or a raster data:image URL. */
   icon: string;
   inputBytes: number;
   outputBytes: number;

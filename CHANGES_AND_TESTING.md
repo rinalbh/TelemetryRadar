@@ -27,12 +27,12 @@
 | --- | --- |
 | `src/routes/+page.svelte` | Экран Analytics, состояние снимка, пауза, список приложений |
 | `src/routes/+layout.ts` | Режим SPA (`ssr = false`) |
-| `src/lib/components/TrafficChart.svelte` | SVG-график с заливками и подсказкой |
+| `src/lib/components/TrafficChart.svelte` | Canvas-график с HTML/CSS-сеткой, осями и подсказкой |
 | `src/lib/telemetry/types.ts` | Контракт снимка и источника данных |
 | `src/lib/telemetry/mock-traffic.json` | Начальная история, имена, иконки и объёмы приложений |
 | `src/lib/telemetry/mock-source.ts` | JSON-снимки каждые 5 секунд |
 | `src/lib/telemetry/model.ts` | Следующий снимок, суммы, ограничение истории, проверка JSON |
-| `static/icons/` | Локальные SVG-моки иконок; внешние запросы для них не нужны |
+| `src/lib/components/AppIcon.svelte` | Моки иконок на HTML/CSS и поддержка будущих PNG/JPEG/WebP |
 | `messages/en.json` | Единственный английский словарь |
 | `project.inlang/settings.json` | Конфигурация Paraglide/Inlang |
 | `paraglide.config.js` | Общие опции компиляции для проверки и Vite |
@@ -104,7 +104,7 @@ npm run preview -- --port 4173
 const readRadar = () => ({
   sequences: [...document.querySelectorAll('[data-sequence]')]
     .map(el => Number(el.dataset.sequence)),
-  path: document.querySelector('path[stroke="#00dce6"]')?.getAttribute('d'),
+  chartSample: document.querySelector('canvas')?.dataset.sampleTime,
   widths: [...document.querySelectorAll('.bar-total')].map(el => el.style.width)
 });
 const before = readRadar();
@@ -113,7 +113,7 @@ setTimeout(() => {
   console.table({
     newSnapshot: after.sequences[0] > before.sequences[0],
     synchronizedPanels: after.sequences[0] === after.sequences[1],
-    chartChanged: after.path !== before.path,
+    chartChanged: after.chartSample !== before.chartSample,
     allBarsChanged: after.widths.every((width, i) => width !== before.widths[i])
   });
 }, 5600);
@@ -126,7 +126,7 @@ setTimeout(() => {
 1. Реализуйте `TelemetrySource.subscribe(listener)` из `types.ts` на событиях агента. Метод возвращает функцию отписки.
 2. Получайте полный JSON-снимок и проверяйте его через `parseSnapshot(json)` до передачи в UI. Повреждённый пакет следует обработать в адаптере источника: оставить предыдущий снимок и сообщить о сбое соединения.
 3. В `+page.svelte` замените вызов `createMockSource()` своим источником. Общий график и список приложений уже используют единый объект `snapshot`.
-4. Передавайте стабильные `applications[].id`, имя, иконку, накопленные байты и текущие скорости. Имена не зашиты в разметке. Иконки сейчас принимаются из `/icons/<name>.svg` или как base64 PNG/JPEG/WebP; поддержку Tauri asset URL нужно добавить при интеграции.
+4. Передавайте стабильные `applications[].id`, имя, иконку, накопленные байты и текущие скорости. Имена не зашиты в разметке. Иконки-моки задаются токеном `mock:chrome` (и аналогичными), внешние иконки принимаются из `/icons/<name>.png|jpg|jpeg|webp` или как base64 PNG/JPEG/WebP; поддержку Tauri asset URL нужно добавить при интеграции.
 5. `history` содержит 2–61 строго упорядоченную точку, время — Unix timestamp в миллисекундах, скорости — байты/секунду. Последнее время истории совпадает со временем снимка. Для согласованности скорости последней точки должны быть суммой скоростей приложений. Пример полного пакета — `mock-traffic.json`.
 6. Для Tauri используйте `devUrl: http://127.0.0.1:5173`, `frontendDist: ../ui/build` относительно будущей корневой папки `src-tauri`, `beforeDevCommand: npm --prefix ui run dev`, `beforeBuildCommand: npm --prefix ui run build`. Рекомендуемая минимальная ширина окна — 960 px. Сам `src-tauri` в этом этапе не создавался.
 
@@ -136,10 +136,17 @@ setTimeout(() => {
 - `npm test`: 4/4 пройдены.
 - `npm run build`: успешная статическая сборка.
 - Production-интерфейс проверен в браузере: семь строк приложений, синхронная смена графика и всех семи полос, общий номер снимка обеих панелей.
-- В браузере проверены пауза и возобновление: во время паузы не меняются номер снимка, SVG-путь, ширины полос и время Updated. После возобновления приходит свежий снимок. Переключатель языка отсутствует, lang=en, ошибок приложения в консоли нет.
+- В браузере проверены пауза и возобновление: во время паузы не меняются номер снимка, время данных Canvas, ширины полос и время Updated. После возобновления приходит свежий снимок. Переключатель языка отсутствует, lang=en, ошибок приложения в консоли нет.
 
 ## Перенос фронтенда в ui
 
 Весь npm-проект перемещён из корня в `ui/`, включая исходники, тесты, словарь, Inlang, конфигурацию и lock-файл. Обновлены корневой `.gitignore`, документация и будущие пути интеграции Tauri. Общие файлы Git и документация сохранены в корне. Команды из корня приведены в `README.md`.
 
-Проверено после переноса: npm --prefix ui ci (85 пакетов, 0 уязвимостей); check (0 ошибок/предупреждений); test (4/4); build (ui/build). Запуск из корня через npm --prefix ui run dev: страница и SVG-иконки отвечают HTTP 200, браузер отображает все семь процессов в правильном порядке, ошибок приложения в консоли нет.
+Проверено после переноса: npm --prefix ui ci (85 пакетов, 0 уязвимостей); check (0 ошибок/предупреждений); test (4/4); build (ui/build). Запуск из корня через npm --prefix ui run dev: страница и CSS-иконки отвечают HTTP 200, браузер отображает все семь процессов в правильном порядке, ошибок приложения в консоли нет.
+
+## Интерфейс без SVG
+
+Сетка, оси, подписи графика, карточки, полосы, кнопки и иконки-моки реализованы HTML/CSS. Кривые графика рисуются в HTML Canvas с учётом плотности пикселей и размеров контейнера. Обновления каждые 5 секунд, сортировка и пауза сохранены. SVG-элементы, файлы и ссылки на них удалены из интерфейса. Чтобы проверить отсутствие встроенных векторных элементов, выполните в DevTools `document.querySelectorAll('svg').length`: ожидается 0. График поддерживает просмотр точек стрелками клавиатуры после фокусировки Tab; Escape скрывает подсказку.
+
+
+Проверка версии без SVG: svelte-check — 0 ошибок/0 предупреждений; тесты — 4/4; production build успешен. В браузере: 0 SVG-элементов и SVG-изображений, 7 CSS-иконок, Canvas с ненулевым буфером; работают подсказки с клавиатуры, пауза и возобновление.
