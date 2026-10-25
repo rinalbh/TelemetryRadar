@@ -89,6 +89,17 @@ content repair is allowed; cancellation, stream loss, timeouts and verifier
 infrastructure failures are terminal. A transcript or an uncommitted report file
 does not establish a completed result.
 
+Verification uses one shared frame/stream inventory plus cached filter queries.
+Its cumulative time budget charges verification work only; model repair time is
+covered by the overall analysis deadline. A measured zero may support its own
+absence finding, while an empty filter cannot support an observed example or a
+non-unknown risk assessment. The analysis instructions request a compact first
+pass rather than exhaustive endpoint enumeration.
+
+For a read-only offline check of retained artifacts, use
+`cargo run --example verify_report -- ARTIFACT CANDIDATE [TSHARK]`. This makes no
+capture or provider calls and does not publish or modify report files.
+
 The analysis snapshot includes `analysisId`, `sequence`, `status`, `stage`,
 `directory`, nullable `sessionId`, `error` and `result`, `pendingPermissions`,
 `latestPublicMessage`, `activeToolTitle`, and `cancellationRequested`. Use status

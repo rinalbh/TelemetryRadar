@@ -662,8 +662,24 @@ fn verified_zero_is_distinct_from_qualitative_evidence_matching_nothing() {
     value["evidence"][0]["displayFilter"] = json!("frame.number == 1000000000");
     assert!(verifier.verify(&decode_value(&value).unwrap()).is_ok());
     value["trafficKinds"][0]["evidenceRefs"] = json!(["frame-sample"]);
+    value["trafficKinds"][0]["risk"]["evidenceRefs"] = json!(["frame-sample"]);
+    assert!(
+        verifier.verify(&decode_value(&value).unwrap()).is_ok(),
+        "A measured absence finding may cite its own zero-count evidence"
+    );
+    value["trafficKinds"][0]["risk"]["level"] = json!("low");
     assert!(
         matches!(verifier.verify(&decode_value(&value).unwrap()), Err(VerificationError::Content(message)) if message.contains("filter matches no traffic"))
+    );
+    value["trafficKinds"][0]["risk"]["level"] = json!("unknown");
+    value["trafficKinds"][0]["example"] =
+        json!({"text":"No observed excerpt","redacted":false,"evidenceRefs":["frame-sample"]});
+    assert!(
+        matches!(
+            verifier.verify(&decode_value(&value).unwrap()),
+            Err(VerificationError::Content(_))
+        ),
+        "An empty filter cannot support an observed example"
     );
 }
 

@@ -1,5 +1,5 @@
 //! Bounded offline queries shared by report verification and process extraction.
-use super::report::{MAX_SAFE_INTEGER, Protocol, ReportV1, Unit};
+use super::report::{MAX_SAFE_INTEGER, Protocol, ReportV1, RiskLevel, TrafficKind, Unit};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -443,19 +443,25 @@ impl<'a> Verifier<'a> {
             if let Some(filter) = &evidence.display_filter {
                 let actual = self.totals(filter)?;
                 if actual.packets == 0 {
-                    let zero_basis = report.traffic_kinds.iter().any(|row| {
+                    let measures_zero = |row: &TrafficKind| {
                         row.amount.value == Some(0)
                             && row.amount.evidence_refs == [evidence.id.clone()]
+                    };
+                    let zero_basis = report.traffic_kinds.iter().any(measures_zero);
+                    let unsupported_claim = report.traffic_kinds.iter().any(|row| {
+                        let referenced = row.evidence_refs.contains(&evidence.id)
+                            || row.risk.evidence_refs.contains(&evidence.id);
+                        let example = row
+                            .example
+                            .as_ref()
+                            .is_some_and(|e| e.evidence_refs.contains(&evidence.id));
+                        // A verified zero may support its own absence finding,
+                        // but cannot establish observed content or a risk level.
+                        example
+                            || (referenced
+                                && !(measures_zero(row) && row.risk.level == RiskLevel::Unknown))
                     });
-                    let qualitative = report.traffic_kinds.iter().any(|row| {
-                        row.evidence_refs.contains(&evidence.id)
-                            || row.risk.evidence_refs.contains(&evidence.id)
-                            || row
-                                .example
-                                .as_ref()
-                                .is_some_and(|e| e.evidence_refs.contains(&evidence.id))
-                    });
-                    if !zero_basis || qualitative {
+                    if !zero_basis || unsupported_claim {
                         return Err(VerificationError::Content(format!(
                             "evidence {}: filter matches no traffic; permitted only for an explained zero measurement",
                             evidence.id
