@@ -1,6 +1,5 @@
-//! mitmproxy discovery, domain exports, and readiness-gated local interception.
+//! mitmproxy discovery and readiness-gated local interception.
 mod certificates;
-mod export;
 mod installation;
 mod session;
 

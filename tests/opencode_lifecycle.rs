@@ -3,9 +3,140 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+use telemetryradar::opencode::v1::{ContentBlock, SessionUpdate, StopReason};
 use telemetryradar::opencode::{
     ConnectOptions, ConnectionState, DiscoverySource, Error, Installation, OpenCodeConnection,
 };
+
+#[tokio::test]
+async fn prompts_stream_and_permissions_can_be_answered_while_turn_is_running() {
+    let temp = tempfile::tempdir().unwrap();
+    let connection = OpenCodeConnection::connect(&fixture(), options("", &temp.path().join("pid")))
+        .await
+        .unwrap();
+    let mut updates = connection.subscribe_updates();
+    let mut permissions = connection.subscribe_permissions();
+    let session = connection.new_session(temp.path()).await.unwrap();
+    let config = connection
+        .set_config_option(
+            session.session_id.clone(),
+            "model".into(),
+            "fixture-model".into(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(config.config_options[0].id.to_string(), "model");
+    let prompt =
+        tokio::spawn(connection.prompt_session(session.session_id, "Analyze fixture".into()));
+    let permission = tokio::time::timeout(Duration::from_secs(5), permissions.recv())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(matches!(
+        connection.respond_permission(permission.request_id, Some("invented".into())),
+        Err(Error::Permission(_))
+    ));
+    connection
+        .respond_permission(permission.request_id, Some("once".into()))
+        .unwrap();
+    let result = tokio::time::timeout(Duration::from_secs(5), prompt)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert_eq!(result.stop_reason, StopReason::EndTurn);
+    let mut text = String::new();
+    let mut tool_seen = false;
+    while let Ok(update) = updates.try_recv() {
+        match update.update {
+            SessionUpdate::AgentMessageChunk(chunk) => {
+                if let ContentBlock::Text(content) = chunk.content {
+                    text.push_str(&content.text);
+                }
+            }
+            SessionUpdate::ToolCall(_) => tool_seen = true,
+            _ => {}
+        }
+    }
+    assert!(tool_seen);
+    assert_eq!(text, "Fixture response: Selected once");
+    assert!(
+        connection
+            .respond_permission(permission.request_id, None)
+            .is_err()
+    );
+    connection.shutdown().await.unwrap();
+}
+
+#[tokio::test]
+async fn cancellation_resolves_pending_permissions_and_active_prompts() {
+    let temp = tempfile::tempdir().unwrap();
+    for mode in ["", "wait-cancel"] {
+        let connection =
+            OpenCodeConnection::connect(&fixture(), options(mode, &temp.path().join("pid")))
+                .await
+                .unwrap();
+        let mut permissions = connection.subscribe_permissions();
+        let mut updates = connection.subscribe_updates();
+        let session = connection.new_session(temp.path()).await.unwrap();
+        let prompt =
+            tokio::spawn(connection.prompt_session(session.session_id.clone(), "Analyze".into()));
+        if mode.is_empty() {
+            tokio::time::timeout(Duration::from_secs(5), permissions.recv())
+                .await
+                .unwrap()
+                .unwrap();
+        } else {
+            tokio::time::timeout(Duration::from_secs(5), async {
+                while !matches!(
+                    updates.recv().await.unwrap().update,
+                    SessionUpdate::AgentMessageChunk(_)
+                ) {}
+            })
+            .await
+            .unwrap();
+        }
+        connection.cancel_session(session.session_id).unwrap();
+        let result = tokio::time::timeout(Duration::from_secs(5), prompt)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert_eq!(result.stop_reason, StopReason::Cancelled);
+        connection.shutdown().await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn unattended_permissions_cancel_and_prompt_has_separate_timeout() {
+    let temp = tempfile::tempdir().unwrap();
+    let connection = OpenCodeConnection::connect(&fixture(), options("", &temp.path().join("pid")))
+        .await
+        .unwrap();
+    let session = connection.new_session(temp.path()).await.unwrap();
+    assert_eq!(
+        connection
+            .prompt_session(session.session_id, "Analyze".into())
+            .await
+            .unwrap()
+            .stop_reason,
+        StopReason::Cancelled
+    );
+    connection.shutdown().await.unwrap();
+    let mut inputs = options("slow-prompt", &temp.path().join("slow-pid"));
+    inputs.prompt_timeout = Duration::from_millis(100);
+    let connection = OpenCodeConnection::connect(&fixture(), inputs)
+        .await
+        .unwrap();
+    let session = connection.new_session(temp.path()).await.unwrap();
+    assert!(matches!(
+        connection
+            .prompt_session(session.session_id, "Analyze".into())
+            .await,
+        Err(Error::Timeout(_))
+    ));
+    connection.shutdown().await.unwrap();
+}
 
 fn fixture() -> Installation {
     Installation {
@@ -17,6 +148,7 @@ fn fixture() -> Installation {
 fn options(mode: &str, pid: &Path) -> ConnectOptions {
     let mut options = ConnectOptions {
         initialize_timeout: Duration::from_secs(5),
+        prompt_timeout: Duration::from_secs(5),
         ..Default::default()
     };
     options

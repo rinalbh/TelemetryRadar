@@ -206,8 +206,7 @@ application frames. Zero does not prove success: there may have been no TLS
 traffic, a missed handshake, unsupported application protocols, or a client
 trust/pinning failure. Restart target applications after `Capture ready` to
 capture complete handshakes. Older captures made before key logging was enabled
-cannot be retroactively decrypted from `.mitm` flows alone. Encryption analysis
-still evaluates the original wire transport, even when embedded keys reveal HTTP.
+cannot be retroactively decrypted from `.mitm` flows alone.
 
 GUI callers can pass `LocalReport::tls_secrets.path()` to
 `Installation::embed_tls_secrets(input, keys, output)` on a worker, then drop the
@@ -216,8 +215,7 @@ starting interception to preflight the matching editcap installation.
 
 Local capture intercepts all domains for all apps (or optional `--pid` trees) without a domain
 discovery pass. The proxy and temporary CA trust are ready before packet recording
-starts. Domain collection/export remains available as optional offline analysis;
-it is not required to start capture. Library callers can still restrict domains
+starts. Library callers can still restrict domains
 with `LocalOptions::domains` (`None` allows all; `Some(vec![])` allows none).
 This mode cannot bypass certificate
 pinning; successful local-server startup and CA installation do not establish
@@ -307,63 +305,6 @@ startup. Unknown protocol states never count as ready. Dropping it requests
 shutdown asynchronously. Do not tear down the GUI process until cleanup completes.
 
 Reference: [mitmproxy local mode](https://docs.mitmproxy.org/stable/concepts/modes/#local-capture).
-
-## Domain discovery and encryption evidence
-
-Analyze an existing process-filtered capture:
-
-```sh
-cargo run -- --analyze capture.pcapng --domains-output domains.txt --mitmproxy-output mitmproxy.yaml --report-output analysis.json --verify-encryption
-```
-
-Or add `--domains-output`, `--mitmproxy-output`, `--report-output`, and/or
-`--verify-encryption` to a normal capture command to analyze its output after
-finalization. Export files are never overwritten. Reports are written before
-verification returns a failure, so inconclusive captures remain reviewable.
-
-Library callers use the blocking `wireshark::Installation::analyze(path)` from
-their GUI's task executor. The returned serializable `AnalysisReport` contains
-domain evidence, destination addresses/ports, sample frames, per-flow encryption
-counts, and review frames. `interception_domains()`, `domains_text()`, and
-`mitmproxy_config()` produce proxy inputs; `verify_encryption()` checks evidence.
-Wireshark extraction lives in `src/wireshark/analysis.rs`, and mitmproxy export
-lives in the separate `src/mitmproxy/` module.
-
-Connection hostnames come from TLS SNI (including QUIC ClientHellos), HTTP Host,
-and HTTP/2 :authority. ASCII/punycode names are normalized and deduplicated.
-DNS query names remain labeled hints in JSON; they do not enter the proxy allow
-list unless also observed as a connection hostname. No reverse DNS is performed.
-IP-only destinations, cached names, missing/midstream handshakes, and ECH can
-prevent discovery. ECH outer SNI may identify a cover host rather than the target.
-
-The generated YAML is an `allow_hosts` configuration fragment: merge it into
-mitmproxy's `config.yaml`. Patterns match exact escaped hostnames and optional
-ports. An empty result uses a never-matching pattern, not an empty allow list
-(which would remove the restriction). Export does not start mitmproxy, route
-traffic, install certificates, or establish interception compatibility.
-
-Encryption verification is conservative protocol evidence, not a cryptographic
-proof. The report separately counts protected payload, visible handshake
-metadata, empty transport-control packets, recognized cleartext, unknown traffic,
-and truncated packets. Ports and random-looking bytes do not establish encryption.
-TLS/DTLS application records and QUIC application protection are evidence of a
-protected transport. QUIC Initial/Retry/negotiation and TLS handshake metadata
-are not treated as confidential application payload. Unknown QUIC versions fail
-classification. Plain DNS counts as cleartext even when application data uses TLS.
-
-`--verify-encryption` exits unsuccessfully if any packet is cleartext, unknown,
-or truncated, or if no protected payload is observed. Empty captures and
-captures containing only visible handshake/control records cannot pass. TLS 1.3
-opaque application records can also carry encrypted handshake messages, so the
-report does not infer decrypted application content. A successful check means every observed
-payload was recognized as protected, with no detected cleartext; it cannot prove
-cipher strength, hide visible SNI/headers, or cover uncaptured application traffic.
-Use JSON `flows[].review_frames` to investigate failures. This check does not
-claim that arbitrary Discord UDP/voice payloads are encrypted.
-
-References: [mitmproxy host matching](https://docs.mitmproxy.org/stable/howto/ignore-domains/),
-[Wireshark TLS fields](https://www.wireshark.org/docs/dfref/t/tls.html),
-[QUIC Initial protection](https://www.rfc-editor.org/rfc/rfc9001.html#section-5.2).
 
 ## Capture filtering and limitations
 

@@ -4,9 +4,9 @@ A desktop and CLI workspace for understanding system network traffic. The shared
 Rust library handles Wireshark capture, optional mitmproxy interception, process
 attribution, and OpenCode Agent Client Protocol connections.
 
-The CLI can capture and analyze traffic today. The initial Tauri/Svelte desktop
-app supports tool discovery and OpenCode connect/disconnect; desktop capture
-controls and agent prompting are still work in progress.
+The CLI captures traffic. The Tauri/Svelte desktop supports tool discovery and
+OpenCode analysis of an existing capture; desktop capture controls are still
+work in progress.
 
 ## Run
 
@@ -73,10 +73,25 @@ See [capture details and library APIs](docs/capture.md).
 
 ## OpenCode
 
-The desktop's OpenCode panel discovers the executable and version, initializes
-ACP on explicit connect, observes connection status, and shuts down on disconnect
-or normal app exit. It does not create sessions, send prompts, approve agent
-permissions, or modify authentication. The integration uses the official ACP SDK.
+Connect in the desktop's OpenCode panel, enter a capture path and optional question,
+then select **Analyze capture**. OpenCode uses host TShark and optional Python through
+its built-in shell; no MCP server or fixed packet analyzer is involved. The panel
+streams assistant text and tool activity, presents agent permission requests, and
+supports cancellation. It uses OpenCode's configured model and existing credentials.
+
+Each run creates a `.telemetryradar-analysis-*` directory beside the capture and
+saves the assistant response as `report.md`. The shell runs with the host user's
+permissions; the investigation directory is a workspace, not a sandbox.
+
+The same flow is available as an interactive example:
+
+```sh
+cargo run --example opencode_analyze -- system.pcapng "What data is sent and where?"
+```
+
+The example prints permission requests and accepts an offered option ID on stdin.
+No capture, installation, or authentication change is performed by this example.
+The integration uses the official ACP SDK.
 
 ```sh
 cargo run --example opencode_smoke

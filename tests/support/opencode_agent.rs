@@ -65,6 +65,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let init_mode = mode.clone();
+    let prompt_mode = mode.clone();
+    let cancellation = std::sync::Arc::new(tokio::sync::Notify::new());
+    let prompt_cancellation = cancellation.clone();
     Agent
         .builder()
         .on_receive_request(
@@ -111,6 +114,89 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             agent_client_protocol::on_receive_request!(),
         )
         .on_receive_request(
+            async move |request: PromptRequest, responder, cx| {
+                let prompt_mode = prompt_mode.clone();
+                let prompt_cancellation = prompt_cancellation.clone();
+                let task_cx = cx.clone();
+                cx.spawn(async move {
+                    let cx = task_cx;
+                    if prompt_mode == "slow-prompt" {
+                        tokio::time::sleep(Duration::from_secs(60)).await;
+                    }
+                    if prompt_mode == "wait-cancel" {
+                        cx.send_notification(SessionNotification::new(
+                            request.session_id.clone(),
+                            SessionUpdate::AgentMessageChunk(ContentChunk::new(
+                                ContentBlock::Text(TextContent::new("Waiting for cancellation")),
+                            )),
+                        ))?;
+                        prompt_cancellation.notified().await;
+                        return responder.respond(PromptResponse::new(StopReason::Cancelled));
+                    }
+                    let tool =
+                        ToolCall::new("fixture-tool", "Inspect capture").kind(ToolKind::Execute);
+                    cx.send_notification(SessionNotification::new(
+                        request.session_id.clone(),
+                        SessionUpdate::ToolCall(tool),
+                    ))?;
+                    let decision = cx
+                        .send_request(RequestPermissionRequest::new(
+                            request.session_id.clone(),
+                            ToolCallUpdate::new(
+                                "fixture-tool",
+                                ToolCallUpdateFields::new().title("Inspect capture".to_string()),
+                            ),
+                            vec![
+                                PermissionOption::new(
+                                    "once",
+                                    "Allow once",
+                                    PermissionOptionKind::AllowOnce,
+                                ),
+                                PermissionOption::new(
+                                    "reject",
+                                    "Reject",
+                                    PermissionOptionKind::RejectOnce,
+                                ),
+                            ],
+                        ))
+                        .block_task()
+                        .await?;
+                    let (text, reason) = match decision.outcome {
+                        RequestPermissionOutcome::Selected(option) => (
+                            format!("Selected {}", option.option_id),
+                            StopReason::EndTurn,
+                        ),
+                        _ => ("Permission cancelled".into(), StopReason::Cancelled),
+                    };
+                    for text in ["Fixture response: ".to_string(), text] {
+                        cx.send_notification(SessionNotification::new(
+                            request.session_id.clone(),
+                            SessionUpdate::AgentMessageChunk(ContentChunk::new(
+                                ContentBlock::Text(TextContent::new(text)),
+                            )),
+                        ))?;
+                    }
+                    responder.respond(PromptResponse::new(reason))
+                })
+            },
+            agent_client_protocol::on_receive_request!(),
+        )
+        .on_receive_request(
+            async move |request: SetSessionConfigOptionRequest, responder, _cx| {
+                responder.respond(SetSessionConfigOptionResponse::new(vec![
+                    SessionConfigOption::select(
+                        request.config_id,
+                        "Model",
+                        request.value.as_value_id().unwrap().clone(),
+                        SessionConfigSelectOptions::Ungrouped(vec![
+                            SessionConfigSelectOption::new("fixture-model", "Fixture model"),
+                        ]),
+                    ),
+                ]))
+            },
+            agent_client_protocol::on_receive_request!(),
+        )
+        .on_receive_request(
             async move |_request: LoadSessionRequest, responder, _cx| {
                 responder.respond(LoadSessionResponse::new())
             },
@@ -123,7 +209,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             agent_client_protocol::on_receive_request!(),
         )
         .on_receive_notification(
-            async move |_request: CancelNotification, _cx| Ok(()),
+            async move |_request: CancelNotification, _cx| {
+                cancellation.notify_one();
+                Ok(())
+            },
             agent_client_protocol::on_receive_notification!(),
         )
         .connect_to(Stdio::new())

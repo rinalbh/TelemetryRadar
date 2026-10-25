@@ -5,10 +5,14 @@
 
 mod connection;
 mod discovery;
+mod investigation;
+mod permissions;
 
 pub use agent_client_protocol::schema::{self, v1};
 pub use connection::{ConnectOptions, ConnectionState, OpenCodeConnection};
 pub use discovery::{DiscoveryOptions, DiscoverySource, Installation, discover};
+pub use investigation::Investigation;
+pub use permissions::PermissionRequest;
 
 /// Errors that can be shown by a GUI without inspecting protocol frames.
 #[derive(Debug, thiserror::Error)]
@@ -40,6 +44,8 @@ pub enum Error {
     InvalidDirectory(std::path::PathBuf),
     #[error("OpenCode does not advertise {0}")]
     Unsupported(&'static str),
+    #[error("permission response rejected: {0}")]
+    Permission(&'static str),
     #[error("connection task failed: {0}")]
     Task(String),
 }

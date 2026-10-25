@@ -3,7 +3,8 @@
 The `telemetryradar::opencode` module discovers installed OpenCode executables and
 manages ACP connections. It is part of the root Rust library, with the same
 Cargo manifest and lockfile as capture. The desktop commands call this module;
-the Svelte panel supports installation checks, explicit connect, and disconnect.
+the Svelte panel supports installation checks, explicit connect/disconnect, and
+one-shot analysis of an existing capture through OpenCode's built-in shell.
 
 ## Usage
 
@@ -67,19 +68,61 @@ session, send a prompt, or invoke authentication. Existing OpenCode provider
 credentials are inherited in the normal way; advertised auth methods are
 available in the initialize response for a future UI.
 
-`ConnectOptions` configures initialization, request, and shutdown deadlines plus
-additional child environment variables. Client filesystem and terminal
-capabilities are left disabled. Permission requests are answered as cancelled;
-interactive permission UI and prompting are outside this module's
-current scope. No automatic consent is given.
+`ConnectOptions` configures initialization, request, prompt, and shutdown deadlines
+plus additional child environment variables. Prompt turns default to 30 minutes;
+lifecycle requests retain a 30-second deadline. Client filesystem and terminal
+capabilities remain disabled; OpenCode uses its own shell and file tools.
 
-Public session operations are `new_session`, `load_session`, `cancel_session`,
-and `close_session`. Working directories must be existing absolute directories.
+Subscribe with `subscribe_permissions()` before prompting and answer through
+`respond_permission(request_id, option_id)`. Only options actually offered by the
+agent are accepted. Passing `None`, having no subscriber, or cancelling the session
+answers as cancelled. Permission waits use SDK-spawned tasks so they do not block
+protocol updates or cancellation. The desktop presents the agent's options; it
+does not automatically grant consent. Existing OpenCode permissions still apply.
+
+Public session operations are `new_session`, `load_session`, `prompt_session`,
+`cancel_session`, `close_session`, and `set_config_option`. Working directories must be existing absolute directories.
 Load and close are checked against the agent's negotiated capabilities. Closing
 detaches the session while retaining saved history; this library never deletes
 history. Cancellation is a notification, so successful delivery does not confirm
 completion. A request timeout has an uncertain remote outcome: shut down and
 reconnect before retrying a session creation if duplicate sessions matter.
+
+`prompt_session(id, text)` returns an owned future so application state locks can
+be released before awaiting it. Subscribe to updates first: response text arrives
+as `AgentMessageChunk`, while the response carries the stop reason. Callers must
+serialize turns per session. Dropping an active prompt future sends cancellation
+and resolves pending permissions. A timeout sends cancellation too; the desktop
+closes the connection before allowing a retry with an uncertain outcome.
+
+## Capture analysis
+
+`Investigation::prepare(capture, question)` validates the existing file, discovers
+host TShark and optional Python, creates a `.telemetryradar-analysis-*` workspace
+beside the capture, and prepares instructions. It performs no packet analysis.
+The instructions supply explicit executable paths and offline decoding options,
+including two-pass/out-of-order TCP reassembly and embedded TLS secrets. OpenCode
+is asked to inspect evidence, cite frames and streams, leave the source unchanged,
+and use Python's standard library if needed. No MCP server is supplied.
+
+The desktop exposes `analyze_capture`, `cancel_analysis`, and
+`respond_opencode_permission`. One analysis runs at a time. Updates travel through
+a Tauri IPC channel, with explicit errors on broadcast lag. Cancellation waits up
+to five seconds for a prompt response before shutting down the connection. The
+assistant response is retained in the investigation workspace, including partial
+output on errors. The workspace is not a sandbox; shell authority and permissions
+belong to OpenCode and the host user.
+
+```powershell
+cargo run --example opencode_analyze -- system.pcapng "What data is sent and where?"
+```
+
+This interactive example uses the same investigation instructions. It prints
+permission details and accepts an offered option ID on stdin. Set `TELEMETRYRADAR_MODEL`
+to override the model for this session, or `TELEMETRYRADAR_ACP_TRACE=1` to log protocol
+method names and response IDs without message/tool contents. It can make model
+provider calls through the user's existing OpenCode configuration. The desktop
+and example do not install tools, change authentication, or start capture.
 
 `state`/`subscribe_state` report readiness and unexpected closure, with an error
 when available. `subscribe_updates` yields SDK `SessionNotification` values
@@ -114,11 +157,12 @@ The `test-support` feature builds an SDK-based fixture executable used only by
 the integration tests. They cover discovery precedence, invalid overrides,
 paths containing spaces, missing installations, native npm resolution (Windows),
 executable permissions (Unix), initialization, sessions, capability checks,
-spawn/early-exit/invalid-output/version-negotiation errors, deadlines, cancellation,
-and child cleanup. No test asks a provider for a completion.
+spawn/early-exit/invalid-output/version-negotiation errors, streamed prompts,
+permission selection and validation, unattended permission rejection, cancellation
+of active prompts and pending permissions, prompt deadlines, and child cleanup.
+No automated test asks a provider for a completion.
 
-Validated on Windows on 2026-10-25: all 12 integration tests pass, as do Clippy
-with warnings denied and the formatting check. The installed OpenCode v2.1.3
+The installed OpenCode v2.1.3
 resolved from its npm shim to `@opencode/cli/bin/opencode.exe`; the smoke example
 negotiated ACP v1, observed load/close capabilities, and shut down successfully.
 Linux discovery and process-group paths are implemented but have not been run

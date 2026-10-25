@@ -7,12 +7,16 @@ use tokio::{
     task::JoinHandle,
 };
 
+use super::permissions::Permissions;
 use super::{Error, Installation, Result};
 
 #[derive(Clone, Debug)]
 pub struct ConnectOptions {
     pub initialize_timeout: Duration,
     pub request_timeout: Duration,
+    pub prompt_timeout: Duration,
+    /// Log protocol method names and response IDs, never message or tool contents.
+    pub trace_protocol: bool,
     pub shutdown_timeout: Duration,
     pub client_name: String,
     pub client_version: String,
@@ -25,6 +29,8 @@ impl Default for ConnectOptions {
         Self {
             initialize_timeout: Duration::from_secs(30),
             request_timeout: Duration::from_secs(30),
+            prompt_timeout: Duration::from_secs(30 * 60),
+            trace_protocol: false,
             shutdown_timeout: Duration::from_secs(5),
             client_name: "telemetryradar".into(),
             client_version: env!("CARGO_PKG_VERSION").into(),
@@ -73,6 +79,25 @@ pub struct OpenCodeConnection {
     shutdown: Option<oneshot::Sender<()>>,
     state: watch::Receiver<ConnectionState>,
     updates: broadcast::Sender<SessionNotification>,
+    permissions: Permissions,
+}
+
+struct PromptGuard {
+    connection: ConnectionTo<Agent>,
+    permissions: Permissions,
+    session: SessionId,
+    completed: bool,
+}
+
+impl Drop for PromptGuard {
+    fn drop(&mut self) {
+        self.permissions.cancel(&self.session);
+        if !self.completed {
+            let _ = self
+                .connection
+                .send_notification(CancelNotification::new(self.session.clone()));
+        }
+    }
 }
 
 impl OpenCodeConnection {
@@ -81,7 +106,21 @@ impl OpenCodeConnection {
         let config = AcpAgentConfig::new(&installation.executable)
             .arg("acp")
             .envs(options.environment.clone());
-        Self::connect_agent(AcpAgent::new(config), options).await
+        let mut agent = AcpAgent::new(config);
+        if options.trace_protocol {
+            agent = agent.with_debug(|line, direction| {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(line) {
+                    eprintln!(
+                        "ACP {direction:?}: method={} id={} update={} error={}",
+                        value["method"],
+                        value["id"],
+                        value["params"]["update"]["sessionUpdate"],
+                        value["error"]["code"]
+                    );
+                }
+            });
+        }
+        Self::connect_agent(agent, options).await
     }
 
     async fn connect_agent(agent: AcpAgent, options: ConnectOptions) -> Result<Self> {
@@ -90,6 +129,8 @@ impl OpenCodeConnection {
         let (state_tx, state) = watch::channel(ConnectionState::Connecting);
         let (updates, _) = broadcast::channel(128);
         let update_tx = updates.clone();
+        let permissions = Permissions::new();
+        let permission_handler = permissions.clone();
         let identity =
             Implementation::new(options.client_name.clone(), options.client_version.clone());
         let task_state = state_tx.clone();
@@ -106,10 +147,13 @@ impl OpenCodeConnection {
                     agent_client_protocol::on_receive_notification!(),
                 )
                 .on_receive_request(
-                    async move |_request: RequestPermissionRequest, responder, _cx| {
-                        responder.respond(RequestPermissionResponse::new(
-                            RequestPermissionOutcome::Cancelled,
-                        ))
+                    async move |request: RequestPermissionRequest, responder, cx| {
+                        let permissions = permission_handler.clone();
+                        cx.spawn(async move {
+                            responder.respond(RequestPermissionResponse::new(
+                                permissions.request(request).await,
+                            ))
+                        })
                     },
                     agent_client_protocol::on_receive_request!(),
                 )
@@ -153,6 +197,7 @@ impl OpenCodeConnection {
                 shutdown: Some(shutdown_tx),
                 state,
                 updates,
+                permissions,
             }),
             Ok(Ok(Err(error))) => {
                 task.0.as_ref().expect("owned task").abort();
@@ -193,6 +238,55 @@ impl OpenCodeConnection {
         self.updates.subscribe()
     }
 
+    /// Without a subscriber, permission requests are cancelled automatically.
+    pub fn subscribe_permissions(&self) -> broadcast::Receiver<super::PermissionRequest> {
+        self.permissions.subscribe()
+    }
+
+    pub fn respond_permission(
+        &self,
+        request_id: u64,
+        option: Option<PermissionOptionId>,
+    ) -> Result<()> {
+        self.permissions.respond(request_id, option)
+    }
+
+    /// Owns its request handle so callers can release application state locks while
+    /// awaiting the turn. Text and tool activity arrive on subscribe_updates().
+    pub fn prompt_session(
+        &self,
+        id: SessionId,
+        text: String,
+    ) -> impl Future<Output = Result<PromptResponse>> + Send + 'static {
+        let ready = self.ensure_ready();
+        let connection = self.connection.clone();
+        let timeout = self.options.prompt_timeout;
+        let permissions = self.permissions.clone();
+        async move {
+            ready?;
+            permissions.begin_turn(&id);
+            let mut guard = PromptGuard {
+                connection: connection.clone(),
+                permissions,
+                session: id.clone(),
+                completed: false,
+            };
+            let request =
+                PromptRequest::new(id.clone(), vec![ContentBlock::Text(TextContent::new(text))]);
+            let result =
+                tokio::time::timeout(timeout, connection.send_request(request).block_task()).await;
+            match result {
+                Ok(result) => {
+                    guard.completed = true;
+                    result.map_err(Error::Acp)
+                }
+                Err(_) => Err(Error::Timeout(
+                    "session/prompt (cancel sent; reconnect before retrying)",
+                )),
+            }
+        }
+    }
+
     fn ensure_ready(&self) -> Result<()> {
         if self.state() == ConnectionState::Ready {
             Ok(())
@@ -226,6 +320,20 @@ impl OpenCodeConnection {
             .await
     }
 
+    /// Set an option advertised by session/new, such as a model selection.
+    pub async fn set_config_option(
+        &self,
+        id: SessionId,
+        config: SessionConfigId,
+        value: SessionConfigOptionValue,
+    ) -> Result<SetSessionConfigOptionResponse> {
+        self.request(
+            SetSessionConfigOptionRequest::new(id, config, value),
+            "session/set_config_option",
+        )
+        .await
+    }
+
     /// Load and replay an existing session. Subscribe to updates first.
     pub async fn load_session(
         &self,
@@ -243,6 +351,7 @@ impl OpenCodeConnection {
     /// Cancel active work; delivery is a notification, without an agent acknowledgement.
     pub fn cancel_session(&self, id: SessionId) -> Result<()> {
         self.ensure_ready()?;
+        self.permissions.cancel(&id);
         self.connection
             .send_notification(CancelNotification::new(id))
             .map_err(Error::Acp)

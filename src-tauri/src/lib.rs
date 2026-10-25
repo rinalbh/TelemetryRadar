@@ -12,6 +12,9 @@ pub fn run() {
             opencode::connect_opencode,
             opencode::disconnect_opencode,
             opencode::opencode_status,
+            opencode::analyze_capture,
+            opencode::cancel_analysis,
+            opencode::respond_opencode_permission,
         ])
         .build(tauri::generate_context!())
         .expect("could not build TelemetryRadar desktop")

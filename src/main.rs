@@ -1,8 +1,7 @@
 use clap::Parser;
 use std::{
     ffi::OsString,
-    io::Write,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::ExitCode,
     sync::{
         Arc,
@@ -24,12 +23,12 @@ struct Args {
     #[arg(long, conflicts_with = "list")]
     detect: bool,
     /// Detect the mitmproxy installation (headless mitmdump executable).
-    #[arg(long, conflicts_with_all = ["detect", "list", "analyze", "mitmproxy_local"])]
+    #[arg(long, conflicts_with_all = ["detect", "list", "mitmproxy_local"])]
     detect_mitmproxy: bool,
     #[arg(long, env = "MITMPROXY_MITMDUMP")]
     mitmdump: Option<PathBuf>,
     /// Intercept all processes/domains (or --pid trees); wait for proxy and CA trust before recording.
-    #[arg(long, conflicts_with_all = ["detect", "list", "analyze"])]
+    #[arg(long, conflicts_with_all = ["detect", "list"])]
     mitmproxy_local: bool,
     /// Also retain native mitmproxy flows; by default only the self-contained pcapng is saved.
     #[arg(long, requires = "mitmproxy_local")]
@@ -50,25 +49,10 @@ struct Args {
     )]
     mitmproxy_nss_db: Option<PathBuf>,
     /// Revoke abandoned capture CAs left after a crash, without starting a capture.
-    #[arg(long, conflicts_with_all = ["detect", "detect_mitmproxy", "list", "analyze", "mitmproxy_local", "pids"])]
+    #[arg(long, conflicts_with_all = ["detect", "detect_mitmproxy", "list", "mitmproxy_local", "pids"])]
     cleanup_mitmproxy_certs: bool,
     #[arg(long, short = 'D')]
     list: bool,
-    /// Analyze an existing capture instead of capturing.
-    #[arg(long, conflicts_with_all = ["detect", "list", "pids"])]
-    analyze: Option<PathBuf>,
-    /// Save observed connection hostnames, one per line (excludes DNS-only hints).
-    #[arg(long, conflicts_with_all = ["detect", "list"])]
-    domains_output: Option<PathBuf>,
-    /// Save a mitmproxy allow_hosts YAML fragment. Does not start/configure a proxy.
-    #[arg(long, conflicts_with_all = ["detect", "list"])]
-    mitmproxy_output: Option<PathBuf>,
-    /// Save domain evidence, encryption counts, and per-flow findings as JSON.
-    #[arg(long, conflicts_with_all = ["detect", "list"])]
-    report_output: Option<PathBuf>,
-    /// Fail if payloads are cleartext, unknown, truncated, or no protected payload is seen.
-    #[arg(long, conflicts_with_all = ["detect", "list"])]
-    verify_encryption: bool,
     /// Pick PIDs to resolve executable paths; follows all matching instances and children across restarts.
     #[arg(long = "pid", value_delimiter = ',', value_parser = clap::value_parser!(u32).range(1..))]
     pids: Vec<u32>,
@@ -118,9 +102,6 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     validate_result_paths(&args)?;
-    if let Some(path) = &args.analyze {
-        return analyze(&installation, path, &args);
-    }
     let scope = if args.pids.is_empty() {
         eprintln!("Capturing system traffic (no process filter).");
         CaptureScope::System
@@ -210,83 +191,14 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             report.captured_packets
         );
     }
-    if args.verify_encryption
-        || args.domains_output.is_some()
-        || args.mitmproxy_output.is_some()
-        || args.report_output.is_some()
-    {
-        analyze(&installation, &report.output, &args)?;
-    }
     Ok(())
 }
 
 fn validate_result_paths(args: &Args) -> telemetryradar::Result<()> {
-    let mut paths: Vec<PathBuf> = [
-        &args.domains_output,
-        &args.mitmproxy_output,
-        &args.report_output,
-    ]
-    .into_iter()
-    .filter_map(|path| path.clone())
-    .collect();
-    if args.analyze.is_none() {
-        paths.push(args.output.clone());
-    }
+    let mut paths = vec![args.output.clone()];
     paths.extend(args.mitmproxy_flows.iter().cloned());
     paths.extend(args.mitmproxy_log.iter().cloned());
     telemetryradar::output::validate_new_outputs(&paths)
-}
-
-fn save_new(path: &Path, bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-    let parent = path
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or(Path::new("."));
-    let mut file = tempfile::NamedTempFile::new_in(parent)?;
-    file.write_all(bytes)?;
-    file.persist_noclobber(path)?;
-    Ok(())
-}
-
-fn analyze(
-    installation: &Installation,
-    path: &Path,
-    args: &Args,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let report = installation.analyze(path)?;
-    let counts = &report.encryption;
-    println!(
-        "Encryption evidence: {:?}; {} packets: {} protected payload, {} handshake metadata, {} transport control, {} cleartext, {} unknown, {} truncated.",
-        report.verdict,
-        counts.total_packets,
-        counts.protected_payload,
-        counts.handshake_metadata,
-        counts.transport_control,
-        counts.cleartext,
-        counts.unknown,
-        counts.truncated
-    );
-    println!(
-        "Observed connection domains ({}):",
-        report.interception_domains().len()
-    );
-    print!("{}", report.domains_text());
-    println!(
-        "Passive protocol evidence does not prove cryptographic confidentiality or complete hostname coverage."
-    );
-    if let Some(path) = &args.domains_output {
-        save_new(path, report.domains_text().as_bytes())?;
-    }
-    if let Some(path) = &args.mitmproxy_output {
-        save_new(path, report.mitmproxy_config().as_bytes())?;
-    }
-    if let Some(path) = &args.report_output {
-        save_new(path, &serde_json::to_vec_pretty(&report)?)?;
-    }
-    if args.verify_encryption {
-        report.verify_encryption()?;
-    }
-    Ok(())
 }
 
 fn main() -> ExitCode {
@@ -318,18 +230,6 @@ mod tests {
         assert!(
             Args::try_parse_from(["radar", "--pid", "1", "--mitmproxy-startup-timeout", "5"])
                 .is_err()
-        );
-        assert!(
-            Args::try_parse_from([
-                "radar",
-                "--analyze",
-                "capture.pcapng",
-                "--verify-encryption"
-            ])
-            .is_ok()
-        );
-        assert!(
-            Args::try_parse_from(["radar", "--analyze", "capture.pcapng", "--pid", "1"]).is_err()
         );
         let args = Args::try_parse_from(["radar", "--pid", "10,20", "--pid", "30"]).unwrap();
         assert_eq!(args.pids, [10, 20, 30]);

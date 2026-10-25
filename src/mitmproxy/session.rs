@@ -430,7 +430,7 @@ fn run_with_certificates(
         .map(|domains| -> Result<Vec<String>> {
             let mut patterns = BTreeSet::new();
             for domain in domains {
-                let host = crate::wireshark::normalize_hostname(domain)
+                let host = normalize_hostname(domain)
                     .ok_or_else(|| Error::Invalid(format!("Invalid domain: {domain}")))?;
                 patterns.insert(format!("^{}(?::[0-9]+)?$", host.replace('.', "\\.")));
             }
@@ -642,6 +642,33 @@ fn run_with_certificates(
         operation: Box::new(operation),
         directory: directory.keep(),
     })
+}
+
+/// Hostnames are ASCII/punycode, normalized, and cannot inject regex/YAML syntax.
+fn normalize_hostname(value: &str) -> Option<String> {
+    let value = value.trim();
+    let host = if let Some((host, port)) = value.rsplit_once(':') {
+        port.parse::<u16>().ok().filter(|p| *p > 0)?;
+        host
+    } else {
+        value
+    };
+    let host = host.strip_suffix('.').unwrap_or(host).to_ascii_lowercase();
+    if host.is_empty() || host.len() > 253 || host.parse::<std::net::IpAddr>().is_ok() {
+        return None;
+    }
+    if !host.split('.').all(|label| {
+        !label.is_empty()
+            && label.len() <= 63
+            && !label.starts_with('-')
+            && !label.ends_with('-')
+            && label
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+    }) {
+        return None;
+    }
+    Some(host)
 }
 
 #[cfg(test)]
