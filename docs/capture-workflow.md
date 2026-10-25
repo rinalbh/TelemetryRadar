@@ -1,10 +1,16 @@
-# Capture workflow backend
+# Capture workflow
 
-This is a minimal backend foundation for the workflow in
-`CAPTURE_WORKFLOW_PLAN.md`. The existing GUI remains in place; the images under
-`images/` are rough visual references. The new TypeScript contracts in
-`web/lib/capture.ts`, `web/lib/opencode.ts` and `web/lib/traffic-report.ts` let a
-future GUI use registered operations and validated findings.
+The desktop follows the simple flow illustrated by the rough references in
+`images/`: start recording, choose an app and an advertised model, stop and
+analyze, then explore the report. Tool discovery and the OpenCode connection
+happen automatically. The normal workflow has no capture-file paths, question
+box, or separate connection/setup step. Recordings and reports are managed by the
+application.
+
+`CaptureWorkspace.svelte` drives the existing capture/analysis commands through
+the typed contracts in `web/lib/capture.ts` and `web/lib/opencode.ts`.
+`ReportDashboard.svelte` renders the fixed structured report. Model permissions,
+when actually requested by OpenCode, remain scoped to the active operation.
 
 ## Capture commands
 
@@ -90,11 +96,17 @@ after remount; IPC events are not the only source of truth. Retained records
 support lookup by ID after restart. Interrupted work requires explicit user
 action; recording and possibly completed prompts are never automatically replayed.
 
-The implementation does not complete every plan phase. A replacement dashboard,
-verified persistent live decoder, installation actions, structured follow-ups,
+The implementation does not complete every plan phase. A verified persistent
+live decoder, installation actions, structured follow-ups,
 interactive evidence exploration and complete revision/recovery UI remain future
 work. No automatic installer, provider login or persistent certificate-trust test
 is part of this backend change.
+
+Development-only layout previews use `?preview=recording`, `selection`,
+`analyzing`, or `results` on the local development server. Every preview is
+labelled as sample data and invokes neither capture nor a model provider. The
+preview initialization is guarded by `import.meta.env.DEV` and is absent from the
+production flow.
 
 ## Verification
 

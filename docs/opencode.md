@@ -3,8 +3,11 @@
 The `telemetryradar::opencode` module discovers installed OpenCode executables and
 manages ACP connections. It is part of the root Rust library, with the same
 Cargo manifest and lockfile as capture. The desktop commands call this module;
-the Svelte panel supports installation checks, explicit connect/disconnect, and
-one-shot analysis of an existing capture through OpenCode's built-in shell.
+the desktop connects automatically after an app is selected from the recording.
+Its preparation panel exposes the session's advertised model choices, followed
+by one explicit stop-and-analyze action. There is no manual prompt or capture-path
+field in the normal GUI. The shared library and CLI example still support
+analysis of existing captures.
 
 ## Usage
 
@@ -129,7 +132,7 @@ work. See [capture-workflow.md](capture-workflow.md) for contracts and scope.
 
 The workspace is not a sandbox; shell authority and permissions belong to
 OpenCode and the host user. Extracted traffic may be sent to the selected provider.
-The future confirmation view must identify the advertised model/provider. Example
+The selection view identifies the advertised model/provider before analysis. Example
 redaction does not redact provider requests or tool output.
 
 ```powershell
