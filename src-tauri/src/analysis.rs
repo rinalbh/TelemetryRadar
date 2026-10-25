@@ -284,6 +284,12 @@ pub struct ModelChoice {
     value: String,
 }
 
+impl ModelChoice {
+    fn acp_value(&self) -> v1::SessionConfigOptionValue {
+        v1::SessionConfigOptionValue::value_id(self.value.clone())
+    }
+}
+
 fn advertised_choice(configs: &[v1::SessionConfigOption], choice: &ModelChoice) -> bool {
     let configs = serde_json::to_value(configs).unwrap_or(Value::Null);
     configs.as_array().is_some_and(|configs| {
@@ -319,10 +325,12 @@ async fn apply_model(
         .as_ref()
         .ok_or("OpenCode is disconnected; prepare a new draft")?
         .connection;
-    let value = serde_json::from_value::<v1::SessionConfigOptionValue>(json!(choice.value))
-        .map_err(|e| e.to_string())?;
     let updated = connection
-        .set_config_option(session.clone(), choice.config_id.clone().into(), value)
+        .set_config_option(
+            session.clone(),
+            choice.config_id.clone().into(),
+            choice.acp_value(),
+        )
         .await
         .map_err(|e| e.to_string())?;
     let confirmed = serde_json::to_value(&updated.config_options).map_err(|e| e.to_string())?;
@@ -988,6 +996,31 @@ pub async fn respond_opencode_permission(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn desktop_model_choice_becomes_a_valid_acp_configuration_request() {
+        let choice: ModelChoice = serde_json::from_value(json!({
+            "configId": "provider-choice", "value": "provider/model-name"
+        }))
+        .unwrap();
+        let request = v1::SetSessionConfigOptionRequest::new(
+            "session-1",
+            choice.config_id.clone(),
+            choice.acp_value(),
+        );
+        let wire = serde_json::to_value(request).unwrap();
+        assert_eq!(
+            wire,
+            json!({
+                "sessionId": "session-1", "configId": "provider-choice", "value": "provider/model-name"
+            })
+        );
+        let decoded: v1::SetSessionConfigOptionRequest = serde_json::from_value(wire).unwrap();
+        assert_eq!(
+            decoded.value.as_value_id().unwrap().to_string(),
+            choice.value
+        );
+    }
 
     #[test]
     fn model_choices_follow_advertised_categories_and_grouped_values() {
