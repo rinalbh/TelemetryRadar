@@ -591,6 +591,55 @@ fn offline_verification_measures_selected_artifact_and_checks_each_kind_of_locat
 }
 
 #[test]
+fn malformed_membership_filters_are_repairable_and_valid_sets_still_measure_traffic() {
+    let Some(tshark) = tshark() else {
+        return;
+    };
+    let artifact = artifact();
+    let cancelled = AtomicBool::new(false);
+    let mut verifier = Verifier::new(
+        &tshark,
+        &artifact,
+        Instant::now() + Duration::from_secs(60),
+        &cancelled,
+    );
+    for filter in [
+        "tcp.stream in {4 5 6}",
+        "udp.stream in {0 1 2 3}",
+        "tcp.stream ==",
+        "telemetryradar_missing_field == 1",
+    ] {
+        let error = verifier.totals(filter).unwrap_err();
+        assert!(
+            matches!(error, VerificationError::Content(_)),
+            "{filter}: {error}"
+        );
+    }
+    let measured = verifier.totals("frame.number in {1, 2, 3}").unwrap();
+    assert_eq!(measured.packets, 3);
+    assert!(measured.frame_bytes > 0);
+    // A failed filter must not poison the next valid query or become verified zero.
+    assert!(verifier.totals("tcp.stream in {4, 5, 6}").is_ok());
+
+    let mut probe = telemetryradar::wireshark::tool_command(&tshark);
+    probe
+        .args(["-n", "-r"])
+        .arg(&artifact)
+        .args(["-Y", "tcp.stream in {4 5 6}"]);
+    assert!(
+        matches!(
+            telemetryradar::opencode::verification::run_bounded(
+                probe,
+                Instant::now() + Duration::from_secs(30),
+                &cancelled
+            ),
+            Err(VerificationError::Infrastructure(_))
+        ),
+        "Generic subprocess failures must not trigger report repair"
+    );
+}
+
+#[test]
 fn verified_zero_is_distinct_from_qualitative_evidence_matching_nothing() {
     let Some(tshark) = tshark() else {
         return;

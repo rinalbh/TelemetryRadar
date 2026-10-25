@@ -13,14 +13,13 @@ use std::{
 };
 use tauri::{Manager, ipc::Channel};
 use telemetryradar::opencode::{
-    self, Investigation,
+    self, Investigation, VerificationBudget,
     report::ReportV1,
     v1,
     verification::{Validation, VerificationError, Verifier},
 };
 
 const ANALYSIS_TIMEOUT: Duration = Duration::from_secs(30 * 60);
-const VERIFICATION_TIMEOUT: Duration = Duration::from_secs(120);
 const MAX_TRANSCRIPT: usize = 4 * 1024 * 1024;
 
 #[derive(Clone, Serialize)]
@@ -602,7 +601,7 @@ async fn execute(
     });
     let mut transcript = String::new();
     let mut repair_error = None;
-    let mut verification_deadline = None;
+    let mut verification_budget = VerificationBudget::new(deadline);
     let result = async {
         for attempt in 0..=1 {
             operation.check(deadline)?;
@@ -676,7 +675,8 @@ async fn execute(
             investigation.save_response(&transcript).map_err(|e| e.to_string())?;
             operation.check(deadline)?;
             operation.stage("validating")?;
-            let verification_deadline = *verification_deadline.get_or_insert_with(|| deadline.min(Instant::now() + VERIFICATION_TIMEOUT));
+            let verification_started = Instant::now();
+            let verification_deadline = verification_budget.deadline_at(verification_started);
             let artifact = investigation.artifact.clone();
             let hash = investigation.artifact_hash.clone();
             let tshark = investigation.tshark.clone();
@@ -703,6 +703,7 @@ async fn execute(
                 }
                 Ok((report, validation, version))
             }).await.map_err(|e| e.to_string())?;
+            verification_budget.charge(verification_started.elapsed());
             match validation {
                 Ok((report, validation, tshark_version)) => {
                     operation.check(deadline)?;

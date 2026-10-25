@@ -11,7 +11,8 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use telemetryradar::opencode::{
-    self, ConnectOptions, DiscoveryOptions, Investigation, OpenCodeConnection, discover,
+    self, ConnectOptions, DiscoveryOptions, Investigation, OpenCodeConnection, VerificationBudget,
+    discover,
     report::ReportV1,
     v1::{self, ContentBlock, SessionUpdate},
     verification::{self, VerificationError, Verifier},
@@ -97,7 +98,7 @@ async fn main() -> Result<()> {
             verification::run_bounded(command, deadline, &signal)
         }).await??;
         let tshark_version = String::from_utf8(tshark_version)?.lines().next().unwrap_or("unknown").to_string();
-        let mut verification_deadline = None;
+        let mut verification_budget = VerificationBudget::new(deadline);
         let mut repair = None;
         for attempt in 0..=1 {
             verification::check(deadline, &cancelled)?;
@@ -187,7 +188,8 @@ async fn main() -> Result<()> {
             if stop != v1::StopReason::EndTurn { return Err(format!("ACP stopped with {stop:?}; no completed report").into()); }
             investigation.save_response(&transcript)?;
             verification::check(deadline, &cancelled)?;
-            let verification_deadline = *verification_deadline.get_or_insert_with(|| deadline.min(Instant::now() + verification::VERIFICATION_TIMEOUT));
+            let verification_started = Instant::now();
+            let verification_deadline = verification_budget.deadline_at(verification_started);
             let snapshot = investigation.clone();
             let signal = cancelled.clone();
             let checked = tokio::task::spawn_blocking(move || {
@@ -202,6 +204,7 @@ async fn main() -> Result<()> {
                 snapshot.ensure_integrity().map_err(|error| VerificationError::Infrastructure(error.to_string()))?;
                 Ok::<_, VerificationError>((report, validation))
             }).await?;
+            verification_budget.charge(verification_started.elapsed());
             match checked {
                 Ok((report, validation)) => {
                     verification::check(deadline, &cancelled)?;

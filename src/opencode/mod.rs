@@ -3,6 +3,7 @@
 //! Discovery never installs software or changes authentication. Connecting only
 //! initializes ACP; sessions are created explicitly. See `docs/opencode.md`.
 
+mod budget;
 mod connection;
 mod discovery;
 mod investigation;
@@ -11,6 +12,7 @@ pub mod report;
 pub mod verification;
 
 pub use agent_client_protocol::schema::{self, v1};
+pub use budget::VerificationBudget;
 pub use connection::{ConnectOptions, ConnectionState, OpenCodeConnection};
 pub use discovery::{DiscoveryOptions, DiscoverySource, Installation, discover};
 pub use investigation::{
